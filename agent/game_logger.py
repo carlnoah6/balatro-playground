@@ -52,6 +52,28 @@ def format_jokers(jokers) -> str:
     return ", ".join(j.get("name", "?") if isinstance(j, dict) else str(j) for j in jokers)
 
 
+def format_joker_state(jokers) -> list[dict] | None:
+    """Extract full joker runtime state for validation."""
+    if isinstance(jokers, dict):
+        jokers = list(jokers.values())
+    if not jokers:
+        return None
+    result = []
+    for j in jokers:
+        if isinstance(j, dict):
+            result.append({
+                "name": j.get("name", "?"),
+                "x_mult": j.get("x_mult", 0),
+                "mult": j.get("mult", 0),
+                "t_mult": j.get("t_mult", 0),
+                "t_chips": j.get("t_chips", 0),
+                "extra": j.get("extra"),
+                "edition": j.get("edition", ""),
+                "rarity": j.get("rarity", ""),
+            })
+    return result if result else None
+
+
 def format_consumables(consumables) -> str:
     """Format consumables from state dict."""
     if isinstance(consumables, dict):
@@ -83,7 +105,8 @@ class GameLogger:
                dollars: int, hands_left: int, discards_left: int,
                chips: int, target: int,
                action: str, decision_type: str = None, reasoning: str = None,
-               hand_type: str = None, estimated_score: int = None, actual_score: int = None):
+               hand_type: str = None, estimated_score: int = None, actual_score: int = None,
+               joker_state: list = None):
         if not self.enabled or not self.run_id:
             return
         try:
@@ -94,17 +117,21 @@ class GameLogger:
                 dollars, hands_left, discards_left, chips, target,
                 action, decision_type, reasoning,
                 hand_type, estimated_score, actual_score,
-                boss_blind=self._current_boss
+                boss_blind=self._current_boss,
+                joker_state=joker_state
             )
         except Exception as e:
             print(f"[log] write failed: {e}")
 
     def _state_fields(self, st: dict):
         """Extract common fields from game state dict."""
-        jokers = format_jokers(st.get("jokers", {}))
+        raw_jokers = st.get("jokers", {})
+        jokers = format_jokers(raw_jokers)
+        joker_state = format_joker_state(raw_jokers)
         consumables = format_consumables(st.get("consumables", {}))
         return {
             "jokers": jokers,
+            "joker_state": joker_state,
             "consumables": consumables,
             "dollars": st.get("dollars", 0),
             "hands_left": st.get("hands_left", 0),
@@ -126,7 +153,8 @@ class GameLogger:
                      sf["dollars"], sf["hands_left"], sf["discards_left"],
                      sf["chips"], sf["target"],
                      action, decision_type, reasoning,
-                     hand_type, estimated, actual)
+                     hand_type, estimated, actual,
+                     joker_state=sf.get("joker_state"))
 
     def log_discard(self, st: dict, hand_cards, cards_discarded,
                     decision_type: str, reasoning: str):
