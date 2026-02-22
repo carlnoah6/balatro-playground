@@ -587,32 +587,34 @@ def should_discard(ctx: GameContext) -> tuple[bool, list[int], str]:
         if card.rank_num >= 10:
             keep_score += 0.3
 
-        # Epoch 1: lower threshold from 2.0 to 1.0 — discard more aggressively
-        if keep_score < 1.0:
+        # Discard threshold: 1.5 balances aggression with build preservation
+        # (was 2.0 originally, Epoch 1 dropped to 1.0 which was too aggressive)
+        if keep_score < 1.5:
             discard_candidates.append((i, keep_score))
 
     # Sort by keep_score ascending (discard lowest value first)
     discard_candidates.sort(key=lambda x: x[1])
     discard_indices = [i for i, _ in discard_candidates]
 
-    # Epoch 1: much more aggressive discard triggers
+    # Discard triggers: balance aggression with build preservation
     score_ratio = best.final_score / max(1, chips_needed) if chips_needed > 0 else 1.0
 
     if not discard_indices:
-        # Weak hand types should ALWAYS try to improve
+        # Weak hand types: try to improve but respect build-relevant cards
         if best.hand_rank <= 2 and ctx.hands_left > 1:
-            # High Card or Pair — almost never wins, discard everything not in best hand
-            discard_indices = non_scoring[:min(5, ctx.discards_left)]
-            if discard_indices:
-                return (True, discard_indices, f"Weak hand ({best.hand_type}) — aggressive discard to improve")
-        elif best.hand_rank <= 4 and score_ratio < 0.5 and ctx.hands_left > 1:
-            # Two Pair or Three of a Kind but way below target
+            # High Card or Pair — discard non-scoring cards that aren't build-relevant
+            # Only discard up to 3 cards to preserve some hand structure
             discard_indices = non_scoring[:min(3, ctx.discards_left)]
+            if discard_indices:
+                return (True, discard_indices, f"Weak hand ({best.hand_type}) — discard to improve (preserving build cards)")
+        elif best.hand_rank <= 4 and score_ratio < 0.4 and ctx.hands_left > 1:
+            # Two Pair or Three of a Kind but way below target
+            discard_indices = non_scoring[:min(2, ctx.discards_left)]
             if discard_indices:
                 return (True, discard_indices, f"{best.hand_type} only {score_ratio*100:.0f}% of target — discard to improve")
-        elif score_ratio < 0.3 and ctx.hands_left > 1:
-            # Any hand but way below target — try to improve
-            discard_indices = non_scoring[:min(3, ctx.discards_left)]
+        elif score_ratio < 0.2 and ctx.hands_left > 1:
+            # Any hand but way below target — try to improve (more conservative)
+            discard_indices = non_scoring[:min(2, ctx.discards_left)]
             if discard_indices:
                 return (True, discard_indices, f"Score only {score_ratio*100:.0f}% of target — desperate discard")
         else:
@@ -779,12 +781,15 @@ def evaluate_shop_item(item: dict, ctx: GameContext) -> tuple[float, str]:
         reasons.append(f"loses ${interest_loss}/round interest")
 
     # Hard economy rule: protect interest income
-    # Ante 1: spend freely (building joker lineup is priority)
+    # Ante 1: spend aggressively but keep minimum $4 for rerolls/cheap buys
     # Ante 2: start building toward $25
     # Ante 3+: never drop below $25 unless item is game-changing
     tier = JOKER_TIERS.get(name, JokerTier.UNKNOWN)
     if ctx.ante == 1:
-        pass  # No economy floor in ante 1 — spend to find jokers
+        # Still aggressive, but don't go completely broke
+        if money_after < 4 and tier not in (JokerTier.S_PLUS, JokerTier.S):
+            score -= 1.5
+            reasons.append("would go nearly broke in Ante 1")
     elif ctx.ante == 2:
         if money_after < 10 and tier not in (JokerTier.S_PLUS, JokerTier.S):
             score -= 2.0
@@ -1157,14 +1162,19 @@ def should_reroll(ctx: GameContext) -> tuple[bool, str]:
     interest_floor = min(25, (ctx.dollars // 5) * 5)
     surplus = ctx.dollars - interest_floor
 
-    # === Ante 1-2: Aggressive rerolling ===
+    # === Ante 1-2: Aggressive rerolling (with budget cap) ===
     # Finding the right joker early compounds over the entire run
+    # But don't burn all money — keep enough to buy what we find
     if ctx.ante <= 2:
-        # Keep minimum $2 to buy a cheap joker if we find one
-        min_reserve = 2
-        if num_jokers < 2 and ctx.dollars >= reroll_cost + min_reserve:
+        # Keep minimum $4 so we can actually buy a joker after rerolling
+        min_reserve = 4
+        # Cap: max 2 rerolls worth of spending in Ante 1 (don't go below $4)
+        can_reroll = ctx.dollars >= reroll_cost + min_reserve
+        if not can_reroll:
+            return (False, f"Early game — only ${ctx.dollars}, need ${reroll_cost + min_reserve} to reroll safely")
+        if num_jokers < 2:
             return (True, f"Early game — only {num_jokers} jokers, aggressive reroll")
-        if num_jokers < 3 and ctx.dollars >= reroll_cost + 4:
+        if num_jokers < 3:
             # Build path: reroll harder if missing core jokers
             if ctx.build_planner:
                 best = ctx.build_planner.best_path(ctx.ante)
@@ -1172,7 +1182,7 @@ def should_reroll(ctx: GameContext) -> tuple[bool, str]:
                     return (True, f"Early game — hunting {best.path.name} core jokers")
             return (True, f"Early game — {num_jokers} jokers, looking for more")
         # Even with 3+ jokers, reroll if we have no xMult and can afford it
-        if _count_xmult_jokers(ctx) == 0 and ctx.dollars >= reroll_cost + 6:
+        if _count_xmult_jokers(ctx) == 0 and ctx.dollars >= reroll_cost + 8:
             return (True, "Early game — no xMult joker, reroll to find one")
 
     # === Ante 3-5: Balanced rerolling ===
