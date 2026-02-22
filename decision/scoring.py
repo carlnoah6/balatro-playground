@@ -410,12 +410,13 @@ class _ScoringContext:
                  'pareidolia', 'has_smeared', 'chance_multiplier',
                  'resolved_jokers', 'joker_extra_state',
                  '_report_add_chips', '_report_add_mult', '_report_x_mult',
-                 'hand_levels')
+                 'hand_levels', 'game_state')
 
     def __init__(self, base_chips: int, base_mult: int, hand_type: str,
                  played_cards: list[Card], scoring_idxs: list[int],
                  held_cards: list[Card] | None, jokers: list[Joker],
-                 hand_levels: HandLevel | None = None):
+                 hand_levels: HandLevel | None = None,
+                 game_state: dict | None = None):
         self.chips = base_chips
         self.mult = float(base_mult)
         self.hand_type = hand_type
@@ -425,6 +426,7 @@ class _ScoringContext:
         self.held_cards = held_cards or []
         self.jokers = jokers
         self.hand_levels = hand_levels or HandLevel()
+        self.game_state = game_state or {}
         self.pareidolia = any(j.name == "Pareidolia" for j in jokers)
         self.has_smeared = any(j.name == "Smeared Joker" for j in jokers)
         # Oops! All 6s: doubles all probability-based effects
@@ -894,9 +896,13 @@ def _trigger_joker_independent(ctx: _ScoringContext, joker: Joker):
             ctx.add_mult(val)
 
     elif name == "Erosion":
-        # EFHIII: bigAdd(joker[VALUE] * 4, this.mult) — VALUE = cards below 52
-        val = joker.get_extra("value", 0) or joker.mult
-        ctx.add_mult(val * 4)
+        # Balatro source: mult_mod = extra * (starting_deck_size - #G.playing_cards)
+        extra_per_card = joker.get_extra("value", 4) if isinstance(joker.extra, dict) else 4
+        starting = ctx.game_state.get("deck_size", 52)
+        current = ctx.game_state.get("current_deck_size", starting)
+        cards_below = max(starting - current, 0)
+        if cards_below > 0:
+            ctx.add_mult(extra_per_card * cards_below)
 
     elif name == "Bootstraps":
         # EFHIII: bigAdd(joker[VALUE] * 2, this.mult) — VALUE = floor(dollars/5)
@@ -1159,6 +1165,7 @@ def calculate_score(
     jokers: list[Joker],
     hand_levels: HandLevel | None = None,
     held_cards: list[Card] | None = None,
+    game_state: dict | None = None,
 ) -> ScoreBreakdown:
     """Calculate the score for a played hand with full Balatro mechanics.
 
@@ -1172,6 +1179,7 @@ def calculate_score(
         jokers: Active jokers
         hand_levels: Planet card upgrade levels
         held_cards: Cards remaining in hand (for held-card joker effects)
+        game_state: Optional game state dict (deck_size, current_deck_size, dollars, etc.)
 
     Returns:
         ScoreBreakdown with full detail
@@ -1197,6 +1205,7 @@ def calculate_score(
         held_cards=held_cards,
         jokers=jokers,
         hand_levels=hand_levels,
+        game_state=game_state,
     )
 
     # DNA: if exactly 1 card played, add a copy to held cards
@@ -1372,6 +1381,7 @@ def find_best_hands(
     max_size: int = 5,
     top_n: int = 3,
     boss_blind: str = "",
+    game_state: dict | None = None,
 ) -> list[ScoreBreakdown]:
     """Find the top N scoring hands from available cards.
 
@@ -1405,7 +1415,7 @@ def find_best_hands(
             else:
                 held = [hand_cards[i] for i in range(len(hand_cards)) if i not in combo]
 
-            breakdown = calculate_score(played, jokers, hand_levels, held)
+            breakdown = calculate_score(played, jokers, hand_levels, held, game_state=game_state)
             # Map scoring_cards back to original hand indices
             breakdown.all_cards = list(combo)
             breakdown.scoring_cards = [combo[i] for i in breakdown.scoring_cards]
