@@ -619,9 +619,10 @@ def _joker_on_card_scored(ctx: _ScoringContext, joker: Joker, card: Card):
             if card.rank == target_rank and ctx.suit_matches(card, target_suit):
                 ctx.x_mult(2.0)
 
-    # --- Wee Joker: rank 2 → +8 chips (per-card trigger) ---
+    # --- Wee Joker: per-card trigger only increments internal counter, no chip addition ---
+    # Actual chips added in independent section (_joker_scoring_effect)
     elif name == "Wee Joker" and card.rank == "2":
-        ctx.add_chips(8)
+        pass  # visual only in game, chips added in independent section
 
     # --- Hiker: +5 permanent chips per scored card ---
     # EFHIII: card[EXTRA_EXTRA_CHIPS] += 5 (both notStone and isFace branches)
@@ -916,27 +917,28 @@ def _trigger_joker_independent(ctx: _ScoringContext, joker: Joker):
             ctx.add_mult(val)
 
     elif name == "Ice Cream":
-        # EFHIII: this.chips += 100 - joker[VALUE] * 5 — VALUE = hands played
-        val = joker.get_extra("chips", 0) or joker.t_chips
-        if isinstance(val, (int, float)) and val > 20:
-            # val is already the current chips value
-            ctx.add_chips(max(val, 0))
+        # Balatro source: chip_mod = self.ability.extra.chips (starts 100, -5 per hand)
+        val = joker.get_extra("chips", 100)
+        if val > 0:
+            ctx.add_chips(val)
         else:
             # val is hands elapsed
             ctx.add_chips(max(100 - int(val) * 5, 0))
 
     elif name == "Runner":
-        # EFHIII: if hasStraight: chips += 15*(VALUE+1), else: chips += 15*VALUE
-        val = joker.get_extra("chips", 0) or joker.t_chips
+        # Balatro source: chip_mod = self.ability.extra.chips (cumulative)
+        # Before scoring: if Straight played, extra.chips += chip_mod (15)
+        val = joker.get_extra("chips", 0)
         if "Straight" in contains:
-            ctx.add_chips(15 * (val + 1))
-        else:
-            ctx.add_chips(15 * val)
+            val += joker.get_extra("chip_mod", 15)
+        if val > 0:
+            ctx.add_chips(val)
 
     elif name == "Castle":
-        # EFHIII: this.compiledChips += joker[VALUE] * 3 — VALUE = cards discarded of suit
-        val = joker.get_extra("chips", 0) or joker.t_chips
-        ctx.add_chips(val * 3)
+        # Balatro source: chip_mod = self.ability.extra.chips (cumulative, +3 per matching suit discarded)
+        val = joker.get_extra("chips", 0)
+        if val > 0:
+            ctx.add_chips(val)
 
     elif name == "Stone Joker":
         # EFHIII: this.compiledChips += joker[VALUE] * 25 — VALUE = stone cards in deck
@@ -944,20 +946,27 @@ def _trigger_joker_independent(ctx: _ScoringContext, joker: Joker):
         ctx.add_chips(val * 25)
 
     elif name == "Square Joker":
-        # EFHIII: if len==4: chips += 4*(VALUE+1), else: chips += 4*VALUE
-        val = joker.get_extra("chips", 0) or joker.t_chips
+        # Balatro source: chip_mod = self.ability.extra.chips (cumulative)
+        # Before scoring: if 4 cards played, extra.chips += chip_mod (4)
+        # During scoring: adds extra.chips
+        val = joker.get_extra("chips", 0)
         if len(played) == 4:
-            ctx.add_chips(4 * (val + 1))
-        else:
-            ctx.add_chips(4 * val)
+            val += joker.get_extra("chip_mod", 4)  # increment happens before scoring
+        if val > 0:
+            ctx.add_chips(val)
 
     elif name == "Wee Joker":
-        # EFHIII compiled: compiledChips += joker[VALUE] * 8
-        # Per-card trigger in _joker_on_card_scored adds +8 per 2 scored this hand
-        # Independent section adds accumulated chips from previous hands
-        # game state extra.chips = accumulated value (already count * 8)
-        val = joker.get_extra("chips", 0) or joker.t_chips
-        ctx.add_chips(val)
+        # Balatro source: chip_mod = self.ability.extra.chips (cumulative)
+        # Per-card trigger increments extra.chips by chip_mod(8) for each 2 scored
+        # Independent section adds the UPDATED extra.chips (including current hand's 2s)
+        val = joker.get_extra("chips", 0)
+        chip_mod = joker.get_extra("chip_mod", 8)
+        # Count 2s in scoring cards to simulate the per-card increment
+        scoring_cards = [ctx.played_cards[i] for i in ctx.scoring_idxs]
+        twos_scored = sum(1 for c in scoring_cards if c.rank == "2")
+        val += twos_scored * chip_mod
+        if val > 0:
+            ctx.add_chips(val)
 
     elif name == "Bull":
         # EFHIII: this.chips += 2 * joker[VALUE] — VALUE = dollars held
