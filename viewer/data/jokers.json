@@ -1,0 +1,1334 @@
+[
+  {
+    "name_en": "Joker",
+    "name_zh": "小丑",
+    "effect_en": "+4 Mult",
+    "effect_zh": "+4 倍率",
+    "rarity": "Common",
+    "price": 2,
+    "image": "Joker.png"
+  },
+  {
+    "name_en": "Greedy Joker",
+    "name_zh": "贪婪小丑",
+    "effect_en": "+3 Mult for each played Diamond",
+    "effect_zh": "每打出一张方块+3倍率",
+    "rarity": "Common",
+    "price": 5,
+    "image": "Greedy_Joker.png"
+  },
+  {
+    "name_en": "Lusty Joker",
+    "name_zh": "色欲小丑",
+    "effect_en": "+3 Mult for each played Heart",
+    "effect_zh": "每打出一张红心+3倍率",
+    "rarity": "Common",
+    "price": 5,
+    "image": "Lusty_Joker.png"
+  },
+  {
+    "name_en": "Wrathful Joker",
+    "name_zh": "愤怒小丑",
+    "effect_en": "+3 Mult for each played Spade",
+    "effect_zh": "每打出一张黑桃+3倍率",
+    "rarity": "Common",
+    "price": 5,
+    "image": "Wrathful_Joker.png"
+  },
+  {
+    "name_en": "Gluttonous Joker",
+    "name_zh": "暴食小丑",
+    "effect_en": "+3 Mult for each played Club",
+    "effect_zh": "每打出一张梅花+3倍率",
+    "rarity": "Common",
+    "price": 5,
+    "image": "Gluttonous_Joker.png"
+  },
+  {
+    "name_en": "Jolly Joker",
+    "name_zh": "快乐小丑",
+    "effect_en": "+8 Mult if hand contains a Pair",
+    "effect_zh": "手牌含对子时+8倍率",
+    "rarity": "Common",
+    "price": 3,
+    "image": "Jolly_Joker.png"
+  },
+  {
+    "name_en": "Zany Joker",
+    "name_zh": "滑稽小丑",
+    "effect_en": "+12 Mult if hand contains Three of a Kind",
+    "effect_zh": "手牌含三条时+12倍率",
+    "rarity": "Common",
+    "price": 4,
+    "image": "Zany_Joker.png"
+  },
+  {
+    "name_en": "Mad Joker",
+    "name_zh": "疯狂小丑",
+    "effect_en": "+10 Mult if hand contains Two Pair",
+    "effect_zh": "手牌含两对时+10倍率",
+    "rarity": "Common",
+    "price": 4,
+    "image": "Mad_Joker.png"
+  },
+  {
+    "name_en": "Crazy Joker",
+    "name_zh": "狂野小丑",
+    "effect_en": "+12 Mult if hand contains Straight",
+    "effect_zh": "手牌含顺子时+12倍率",
+    "rarity": "Common",
+    "price": 4,
+    "image": "Crazy_Joker.png"
+  },
+  {
+    "name_en": "Droll Joker",
+    "name_zh": "诙谐小丑",
+    "effect_en": "+10 Mult if hand contains Flush",
+    "effect_zh": "手牌含同花时+10倍率",
+    "rarity": "Common",
+    "price": 4,
+    "image": "Droll_Joker.png"
+  },
+  {
+    "name_en": "Sly Joker",
+    "name_zh": "狡猾小丑",
+    "effect_en": "+50 Chips if hand contains a Pair",
+    "effect_zh": "手牌含对子时+50筹码",
+    "rarity": "Common",
+    "price": 3,
+    "image": "Sly_Joker.png"
+  },
+  {
+    "name_en": "Wily Joker",
+    "name_zh": "机智小丑",
+    "effect_en": "+100 Chips if hand contains Three of a Kind",
+    "effect_zh": "手牌含三条时+100筹码",
+    "rarity": "Common",
+    "price": 4,
+    "image": "Wily_Joker.png"
+  },
+  {
+    "name_en": "Clever Joker",
+    "name_zh": "聪明小丑",
+    "effect_en": "+80 Chips if hand contains Two Pair",
+    "effect_zh": "手牌含两对时+80筹码",
+    "rarity": "Common",
+    "price": 4,
+    "image": "Clever_Joker.png"
+  },
+  {
+    "name_en": "Devious Joker",
+    "name_zh": "狡诈小丑",
+    "effect_en": "+100 Chips if hand contains Straight",
+    "effect_zh": "手牌含顺子时+100筹码",
+    "rarity": "Common",
+    "price": 4,
+    "image": "Devious_Joker.png"
+  },
+  {
+    "name_en": "Crafty Joker",
+    "name_zh": "巧妙小丑",
+    "effect_en": "+80 Chips if hand contains Flush",
+    "effect_zh": "手牌含同花时+80筹码",
+    "rarity": "Common",
+    "price": 4,
+    "image": "Crafty_Joker.png"
+  },
+  {
+    "name_en": "Half Joker",
+    "name_zh": "半个小丑",
+    "effect_en": "+20 Mult if hand has 3 or fewer cards",
+    "effect_zh": "手牌≤3张时+20倍率",
+    "rarity": "Common",
+    "price": 5,
+    "image": "Half_Joker.png"
+  },
+  {
+    "name_en": "Walkie Talkie",
+    "name_zh": "对讲机",
+    "effect_en": "Each 10 or 4 gives +10 Chips and +4 Mult",
+    "effect_zh": "每张10或4给+10筹码和+4倍率",
+    "rarity": "Common",
+    "price": 4,
+    "image": "Walkie_Talkie.png"
+  },
+  {
+    "name_en": "Green Joker",
+    "name_zh": "绿色小丑",
+    "effect_en": "+1 Mult per hand played, -1 per discard",
+    "effect_zh": "每出牌+1倍率，每弃牌-1倍率",
+    "rarity": "Common",
+    "price": 4,
+    "image": "Green_Joker.png"
+  },
+  {
+    "name_en": "Blue Joker",
+    "name_zh": "蓝色小丑",
+    "effect_en": "+2 Chips per remaining card in deck",
+    "effect_zh": "牌堆每剩1张+2筹码",
+    "rarity": "Common",
+    "price": 5,
+    "image": "Blue_Joker.png"
+  },
+  {
+    "name_en": "Red Card",
+    "name_zh": "红牌",
+    "effect_en": "+3 Mult when Boss Blind is defeated",
+    "effect_zh": "击败Boss盲注时+3倍率",
+    "rarity": "Common",
+    "price": 5,
+    "image": "Red_Card.png"
+  },
+  {
+    "name_en": "Banner",
+    "name_zh": "旗帜",
+    "effect_en": "+30 Chips per remaining discard",
+    "effect_zh": "每剩余弃牌次数+30筹码",
+    "rarity": "Common",
+    "price": 5,
+    "image": "Banner.png"
+  },
+  {
+    "name_en": "Mystic Summit",
+    "name_zh": "神秘之巅",
+    "effect_en": "+15 Mult when 0 discards left",
+    "effect_zh": "弃牌次数为0时+15倍率",
+    "rarity": "Common",
+    "price": 5,
+    "image": "Mystic_Summit.png"
+  },
+  {
+    "name_en": "Supernova",
+    "name_zh": "超新星",
+    "effect_en": "+1 Mult per hand type played this run",
+    "effect_zh": "本局每种打过的牌型+1倍率",
+    "rarity": "Common",
+    "price": 5,
+    "image": "Supernova.png"
+  },
+  {
+    "name_en": "Ride the Bus",
+    "name_zh": "搭公车",
+    "effect_en": "+1 Mult per consecutive hand without face card",
+    "effect_zh": "连续不含花牌的手牌每手+1倍率",
+    "rarity": "Common",
+    "price": 6,
+    "image": "Ride_the_Bus.png"
+  },
+  {
+    "name_en": "Abstract Joker",
+    "name_zh": "抽象小丑",
+    "effect_en": "+3 Mult per Joker",
+    "effect_zh": "每个小丑+3倍率",
+    "rarity": "Common",
+    "price": 4,
+    "image": "Abstract_Joker.png"
+  },
+  {
+    "name_en": "Stencil Joker",
+    "name_zh": "模板小丑",
+    "effect_en": "x1 Mult per empty Joker slot",
+    "effect_zh": "每个空小丑位x1倍率",
+    "rarity": "Uncommon",
+    "price": 8,
+    "image": ""
+  },
+  {
+    "name_en": "Loyalty Card",
+    "name_zh": "会员卡",
+    "effect_en": "x4 Mult every 6 hands played",
+    "effect_zh": "每6手出牌x4倍率",
+    "rarity": "Uncommon",
+    "price": 5,
+    "image": "Loyalty_Card.png"
+  },
+  {
+    "name_en": "Hiker",
+    "name_zh": "徒步者",
+    "effect_en": "Every played card permanently gains +5 Chips",
+    "effect_zh": "每张打出的牌永久+5筹码",
+    "rarity": "Uncommon",
+    "price": 5,
+    "image": "Hiker.png"
+  },
+  {
+    "name_en": "Bloodstone",
+    "name_zh": "血石",
+    "effect_en": "1 in 3 chance for x1.5 Mult (Hearts)",
+    "effect_zh": "红心牌1/3概率x1.5倍率",
+    "rarity": "Uncommon",
+    "price": 7,
+    "image": "Bloodstone.png"
+  },
+  {
+    "name_en": "Arrowhead",
+    "name_zh": "箭头",
+    "effect_en": "+50 Chips per Spade",
+    "effect_zh": "每张黑桃+50筹码",
+    "rarity": "Uncommon",
+    "price": 7,
+    "image": "Arrowhead.png"
+  },
+  {
+    "name_en": "Onyx Agate",
+    "name_zh": "缟玛瑙",
+    "effect_en": "+7 Mult per Club",
+    "effect_zh": "每张梅花+7倍率",
+    "rarity": "Uncommon",
+    "price": 7,
+    "image": "Onyx_Agate.png"
+  },
+  {
+    "name_en": "Swashbuckler",
+    "name_zh": "海盗",
+    "effect_en": "Mult = sell value of all owned Jokers",
+    "effect_zh": "倍率=所有小丑的卖出价之和",
+    "rarity": "Common",
+    "price": 4,
+    "image": "Swashbuckler.png"
+  },
+  {
+    "name_en": "Joker Stencil",
+    "name_zh": "小丑模板",
+    "effect_en": "",
+    "effect_zh": "小丑牌栏位每有一个空位 ×1 倍率（包括此牌本身）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Joker_Stencil.png"
+  },
+  {
+    "name_en": "Four Fingers",
+    "name_zh": "四指",
+    "effect_en": "",
+    "effect_zh": "所有同花和顺子只需4张牌即可成立",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Four_Fingers.png"
+  },
+  {
+    "name_en": "Mime",
+    "name_zh": "哑剧演员",
+    "effect_en": "",
+    "effect_zh": "重新触发手牌中所有留在手中的牌的能力",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Mime.png"
+  },
+  {
+    "name_en": "Credit Card",
+    "name_zh": "信用卡",
+    "effect_en": "",
+    "effect_zh": "可以透支最多 $20",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Credit_Card.png"
+  },
+  {
+    "name_en": "Ceremonial Dagger",
+    "name_zh": "仪式匕首",
+    "effect_en": "",
+    "effect_zh": "当盲注被击败时，销毁右侧的小丑牌并将其售价的2倍加到此牌的倍率上",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Ceremonial_Dagger.png"
+  },
+  {
+    "name_en": "Marble Joker",
+    "name_zh": "大理石小丑",
+    "effect_en": "",
+    "effect_zh": "每次选择盲注时，在牌组中加入一张石头牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Marble_Joker.png"
+  },
+  {
+    "name_en": "8 Ball",
+    "name_zh": "8号球",
+    "effect_en": "",
+    "effect_zh": "打出的每张8有 1/4 概率生成一张塔罗牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "8_Ball.png"
+  },
+  {
+    "name_en": "Misprint",
+    "name_zh": "印刷错误",
+    "effect_en": "",
+    "effect_zh": "+0 到 +23 之间的随机倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Misprint.png"
+  },
+  {
+    "name_en": "Dusk",
+    "name_zh": "黄昏",
+    "effect_en": "",
+    "effect_zh": "在每回合的最后一手牌时，重新触发所有打出的牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Dusk.png"
+  },
+  {
+    "name_en": "Raised Fist",
+    "name_zh": "举起的拳头",
+    "effect_en": "",
+    "effect_zh": "手牌中点数最小的牌的2倍作为倍率加成",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Raised_Fist.png"
+  },
+  {
+    "name_en": "Chaos the Clown",
+    "name_zh": "混沌小丑",
+    "effect_en": "",
+    "effect_zh": "每回合可以免费重掷1次商店",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Chaos_the_Clown.png"
+  },
+  {
+    "name_en": "Fibonacci",
+    "name_zh": "斐波那契",
+    "effect_en": "",
+    "effect_zh": "打出的每张 A、2、3、5、8 在计分时 +8 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Fibonacci.png"
+  },
+  {
+    "name_en": "Steel Joker",
+    "name_zh": "钢铁小丑",
+    "effect_en": "",
+    "effect_zh": "手牌中每有一张钢铁牌 ×0.2 倍率（当前 ×1 倍率）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Steel_Joker.png"
+  },
+  {
+    "name_en": "Scary Face",
+    "name_zh": "恐怖面孔",
+    "effect_en": "",
+    "effect_zh": "打出的每张人头牌在计分时 +30 筹码",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Scary_Face.png"
+  },
+  {
+    "name_en": "Delayed Gratification",
+    "name_zh": "延迟满足",
+    "effect_en": "",
+    "effect_zh": "如果本回合没有使用弃牌，回合结束时每剩余一次弃牌机会获得 $2",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Delayed_Gratification.png"
+  },
+  {
+    "name_en": "Hack",
+    "name_zh": "骇客",
+    "effect_en": "",
+    "effect_zh": "重新触发打出的每张 2、3、4、5",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Hack.png"
+  },
+  {
+    "name_en": "Pareidolia",
+    "name_zh": "幻想性错视",
+    "effect_en": "",
+    "effect_zh": "所有牌都被视为人头牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Pareidolia.png"
+  },
+  {
+    "name_en": "Gros Michel",
+    "name_zh": "大麦克香蕉",
+    "effect_en": "",
+    "effect_zh": "+15 倍率，每回合结束时有 1/6 概率被销毁",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Gros_Michel.png"
+  },
+  {
+    "name_en": "Even Steven",
+    "name_zh": "偶数史蒂文",
+    "effect_en": "",
+    "effect_zh": "打出的每张偶数牌在计分时 +4 倍率（10、8、6、4、2）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Even_Steven.png"
+  },
+  {
+    "name_en": "Odd Todd",
+    "name_zh": "奇数托德",
+    "effect_en": "",
+    "effect_zh": "打出的每张奇数牌在计分时 +31 筹码（A、9、7、5、3）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Odd_Todd.png"
+  },
+  {
+    "name_en": "Scholar",
+    "name_zh": "学者",
+    "effect_en": "",
+    "effect_zh": "打出的每张 A 在计分时 +20 筹码和 +4 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Scholar.png"
+  },
+  {
+    "name_en": "Business Card",
+    "name_zh": "名片",
+    "effect_en": "",
+    "effect_zh": "打出的每张人头牌有 1/2 概率给予 $2",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Business_Card.png"
+  },
+  {
+    "name_en": "Space Joker",
+    "name_zh": "太空小丑",
+    "effect_en": "",
+    "effect_zh": "每手牌有 1/4 概率升级打出的牌型等级",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Space_Joker.png"
+  },
+  {
+    "name_en": "Egg",
+    "name_zh": "蛋",
+    "effect_en": "",
+    "effect_zh": "每回合售价增加 $3",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Egg.png"
+  },
+  {
+    "name_en": "Burglar",
+    "name_zh": "窃贼",
+    "effect_en": "",
+    "effect_zh": "选择盲注时获得 +3 手牌数，但失去所有弃牌次数",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Burglar.png"
+  },
+  {
+    "name_en": "Blackboard",
+    "name_zh": "黑板",
+    "effect_en": "",
+    "effect_zh": "如果手牌中所有留在手中的牌都是黑桃或梅花，×3 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Blackboard.png"
+  },
+  {
+    "name_en": "Runner",
+    "name_zh": "奔跑者",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌包含顺子，永久 +15 筹码",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Runner.png"
+  },
+  {
+    "name_en": "Ice Cream",
+    "name_zh": "冰淇淋",
+    "effect_en": "",
+    "effect_zh": "+100 筹码，每打出一手牌 -5 筹码",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Ice_Cream.png"
+  },
+  {
+    "name_en": "DNA",
+    "name_zh": "DNA",
+    "effect_en": "",
+    "effect_zh": "每回合第一手打出的牌会在回合开始时被永久复制到手牌中",
+    "rarity": "Common",
+    "price": 0,
+    "image": "DNA.png"
+  },
+  {
+    "name_en": "Splash",
+    "name_zh": "飞溅",
+    "effect_en": "",
+    "effect_zh": "每张打出的牌都会被计分",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Splash.png"
+  },
+  {
+    "name_en": "Sixth Sense",
+    "name_zh": "第六感",
+    "effect_en": "",
+    "effect_zh": "如果第一手打出的牌恰好是1张6，销毁它并生成一张幽灵牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Sixth_Sense.png"
+  },
+  {
+    "name_en": "Constellation",
+    "name_zh": "星座",
+    "effect_en": "",
+    "effect_zh": "每使用一张星球牌，永久获得 ×0.1 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Constellation.png"
+  },
+  {
+    "name_en": "Faceless Joker",
+    "name_zh": "无面小丑",
+    "effect_en": "",
+    "effect_zh": "如果一次弃牌中弃掉3张或更多人头牌，获得 $5",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Faceless_Joker.png"
+  },
+  {
+    "name_en": "Superposition",
+    "name_zh": "叠加态",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌包含 A 和顺子，生成一张塔罗牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Superposition.png"
+  },
+  {
+    "name_en": "To Do List",
+    "name_zh": "待办清单",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌型与指定牌型相同，获得 $4（牌型每回合随机变化）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "To_Do_List.png"
+  },
+  {
+    "name_en": "Cavendish",
+    "name_zh": "卡文迪许香蕉",
+    "effect_en": "",
+    "effect_zh": "×3 倍率，每回合结束时有 1/1000 概率被销毁",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Cavendish.png"
+  },
+  {
+    "name_en": "Card Sharp",
+    "name_zh": "老千",
+    "effect_en": "",
+    "effect_zh": "如果本回合已经打出过相同的牌型，×3 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Card_Sharp.png"
+  },
+  {
+    "name_en": "Madness",
+    "name_zh": "疯狂",
+    "effect_en": "",
+    "effect_zh": "选择小盲注或大盲注时 ×0.5 倍率，并随机销毁一张其他小丑牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Madness.png"
+  },
+  {
+    "name_en": "Square Joker",
+    "name_zh": "方块小丑",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌恰好是4张，+4 倍率（当前 +0 倍率）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Square_Joker.png"
+  },
+  {
+    "name_en": "Seance",
+    "name_zh": "降灵会",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌型是同花五条，生成一张幽灵牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Seance.png"
+  },
+  {
+    "name_en": "Riff-raff",
+    "name_zh": "乌合之众",
+    "effect_en": "",
+    "effect_zh": "选择盲注时生成2张普通小丑牌（必须有空位）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Riff-raff.png"
+  },
+  {
+    "name_en": "Vampire",
+    "name_zh": "吸血鬼",
+    "effect_en": "",
+    "effect_zh": "打出的增强牌在计分时移除增强效果并永久给此牌 ×0.1 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Vampire.png"
+  },
+  {
+    "name_en": "Shortcut",
+    "name_zh": "捷径",
+    "effect_en": "",
+    "effect_zh": "顺子可以有1点的间隔（如 2 3 5 7 8）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Shortcut.png"
+  },
+  {
+    "name_en": "Hologram",
+    "name_zh": "全息图",
+    "effect_en": "",
+    "effect_zh": "每将一张牌加入牌组，永久获得 ×0.25 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Hologram.png"
+  },
+  {
+    "name_en": "Vagabond",
+    "name_zh": "流浪者",
+    "effect_en": "",
+    "effect_zh": "当金钱 ≤$4 时打出手牌，生成一张塔罗牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Vagabond.png"
+  },
+  {
+    "name_en": "Baron",
+    "name_zh": "男爵",
+    "effect_en": "",
+    "effect_zh": "手牌中每有一张K，×1.5 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Baron.png"
+  },
+  {
+    "name_en": "Cloud 9",
+    "name_zh": "九霄云外",
+    "effect_en": "",
+    "effect_zh": "每回合结束时，牌组中每有一张9获得 $1",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Cloud_9.png"
+  },
+  {
+    "name_en": "Rocket",
+    "name_zh": "火箭",
+    "effect_en": "",
+    "effect_zh": "每回合结束时获得 $1，每击败Boss盲注时支付金额增加 $2",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Rocket.png"
+  },
+  {
+    "name_en": "Obelisk",
+    "name_zh": "方尖碑",
+    "effect_en": "",
+    "effect_zh": "连续打出非最常用牌型时，每次 ×0.2 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Obelisk.png"
+  },
+  {
+    "name_en": "Midas Mask",
+    "name_zh": "弥达斯面具",
+    "effect_en": "",
+    "effect_zh": "所有打出的人头牌变为金牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Midas_Mask.png"
+  },
+  {
+    "name_en": "Luchador",
+    "name_zh": "摔角手",
+    "effect_en": "",
+    "effect_zh": "击败Boss盲注时售出此牌以禁用Boss盲注能力",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Luchador.png"
+  },
+  {
+    "name_en": "Photograph",
+    "name_zh": "照片",
+    "effect_en": "",
+    "effect_zh": "打出的第一张人头牌在计分时 ×2 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Photograph.png"
+  },
+  {
+    "name_en": "Gift Card",
+    "name_zh": "礼品卡",
+    "effect_en": "",
+    "effect_zh": "每回合结束时，每张小丑牌和消耗牌售价增加 $1",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Gift_Card.png"
+  },
+  {
+    "name_en": "Turtle Bean",
+    "name_zh": "龟豆",
+    "effect_en": "",
+    "effect_zh": "手牌上限 +5，每回合 -1",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Turtle_Bean.png"
+  },
+  {
+    "name_en": "Erosion",
+    "name_zh": "侵蚀",
+    "effect_en": "",
+    "effect_zh": "牌组中每少于初始52张牌的数量 +4 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Erosion.png"
+  },
+  {
+    "name_en": "Reserved Parking",
+    "name_zh": "预留车位",
+    "effect_en": "",
+    "effect_zh": "手牌中每有一张人头牌，有 1/2 概率给予 $1",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Reserved_Parking.png"
+  },
+  {
+    "name_en": "Mail-In Rebate",
+    "name_zh": "邮寄返利",
+    "effect_en": "",
+    "effect_zh": "每弃掉一张指定点数的牌获得 $5（点数每回合变化）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Mail-In_Rebate.png"
+  },
+  {
+    "name_en": "To the Moon",
+    "name_zh": "飞向月球",
+    "effect_en": "",
+    "effect_zh": "每回合结束时，每拥有 $5 额外获得 $1 利息",
+    "rarity": "Common",
+    "price": 0,
+    "image": "To_the_Moon.png"
+  },
+  {
+    "name_en": "Hallucination",
+    "name_zh": "幻觉",
+    "effect_en": "",
+    "effect_zh": "每次打开补充包时，有 1/2 概率生成一张塔罗牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Hallucination.png"
+  },
+  {
+    "name_en": "Fortune Teller",
+    "name_zh": "算命师",
+    "effect_en": "",
+    "effect_zh": "每使用过一张塔罗牌 +1 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Fortune_Teller.png"
+  },
+  {
+    "name_en": "Juggler",
+    "name_zh": "杂耍者",
+    "effect_en": "",
+    "effect_zh": "手牌上限 +1",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Juggler.png"
+  },
+  {
+    "name_en": "Drunkard",
+    "name_zh": "醉汉",
+    "effect_en": "",
+    "effect_zh": "每回合 +1 弃牌次数",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Drunkard.png"
+  },
+  {
+    "name_en": "Stone Joker",
+    "name_zh": "石头小丑",
+    "effect_en": "",
+    "effect_zh": "牌组中每有一张石头牌 +25 筹码",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Stone_Joker.png"
+  },
+  {
+    "name_en": "Bull",
+    "name_zh": "公牛",
+    "effect_en": "",
+    "effect_zh": "每拥有 $1 +2 筹码",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Bull.png"
+  },
+  {
+    "name_en": "Diet Cola",
+    "name_zh": "无糖可乐",
+    "effect_en": "",
+    "effect_zh": "售出此牌以生成一个免费的双标签",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Diet_Cola.png"
+  },
+  {
+    "name_en": "Trading Card",
+    "name_zh": "交易卡",
+    "effect_en": "",
+    "effect_zh": "弃牌时，如果弃掉的第一张牌是消耗牌，销毁它并获得 $3",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Trading_Card.png"
+  },
+  {
+    "name_en": "Flash Card",
+    "name_zh": "闪卡",
+    "effect_en": "",
+    "effect_zh": "每重掷一次商店，永久 +2 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Flash_Card.png"
+  },
+  {
+    "name_en": "Popcorn",
+    "name_zh": "爆米花",
+    "effect_en": "",
+    "effect_zh": "+20 倍率，每打出一回合 -4 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Popcorn.png"
+  },
+  {
+    "name_en": "Spare Trousers",
+    "name_zh": "备用裤子",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌包含两对，+2 倍率（当前 +0 倍率）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Spare_Trousers.png"
+  },
+  {
+    "name_en": "Ancient Joker",
+    "name_zh": "远古小丑",
+    "effect_en": "",
+    "effect_zh": "打出的每张指定花色的牌在计分时 ×1.5 倍率（花色每回合变化）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Ancient_Joker.png"
+  },
+  {
+    "name_en": "Ramen",
+    "name_zh": "拉面",
+    "effect_en": "",
+    "effect_zh": "×2 倍率，每弃掉一张牌 -0.01 倍率，降至0时销毁",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Ramen.png"
+  },
+  {
+    "name_en": "Seltzer",
+    "name_zh": "苏打水",
+    "effect_en": "",
+    "effect_zh": "接下来打出的10手牌中，重新触发所有打出的牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Seltzer.png"
+  },
+  {
+    "name_en": "Castle",
+    "name_zh": "城堡",
+    "effect_en": "",
+    "effect_zh": "每弃掉一张指定花色的牌，永久 +3 筹码（花色每回合变化）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Castle.png"
+  },
+  {
+    "name_en": "Smiley Face",
+    "name_zh": "笑脸",
+    "effect_en": "",
+    "effect_zh": "打出的每张人头牌在计分时 +5 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Smiley_Face.png"
+  },
+  {
+    "name_en": "Campfire",
+    "name_zh": "篝火",
+    "effect_en": "",
+    "effect_zh": "每售出一张牌，永久 ×0.25 倍率。击败Boss盲注时重置",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Campfire.png"
+  },
+  {
+    "name_en": "Golden Ticket",
+    "name_zh": "金票",
+    "effect_en": "",
+    "effect_zh": "打出的每张金牌在计分时获得 $4",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Golden_Ticket.png"
+  },
+  {
+    "name_en": "Mr. Bones",
+    "name_zh": "骷髅先生",
+    "effect_en": "",
+    "effect_zh": "如果本回合会死亡，改为销毁此牌，防止死亡",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Mr._Bones.png"
+  },
+  {
+    "name_en": "Acrobat",
+    "name_zh": "杂技演员",
+    "effect_en": "",
+    "effect_zh": "每回合最后一手牌 ×3 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Acrobat.png"
+  },
+  {
+    "name_en": "Sock and Buskin",
+    "name_zh": "悲喜剧",
+    "effect_en": "",
+    "effect_zh": "重新触发所有打出的人头牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Sock_and_Buskin.png"
+  },
+  {
+    "name_en": "Troubadour",
+    "name_zh": "吟游诗人",
+    "effect_en": "",
+    "effect_zh": "手牌上限 +2，每回合 -1 手牌数",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Troubadour.png"
+  },
+  {
+    "name_en": "Certificate",
+    "name_zh": "证书",
+    "effect_en": "",
+    "effect_zh": "每回合开始时，在手牌中加入一张随机增强的金牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Certificate.png"
+  },
+  {
+    "name_en": "Smeared Joker",
+    "name_zh": "模糊小丑",
+    "effect_en": "",
+    "effect_zh": "红心和方块视为同一花色，黑桃和梅花视为同一花色",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Smeared_Joker.png"
+  },
+  {
+    "name_en": "Throwback",
+    "name_zh": "回溯",
+    "effect_en": "",
+    "effect_zh": "每跳过一个盲注，永久 ×0.25 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Throwback.png"
+  },
+  {
+    "name_en": "Hanging Chad",
+    "name_zh": "悬挂纸屑",
+    "effect_en": "",
+    "effect_zh": "打出的第一张牌在计分时额外触发2次",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Hanging_Chad.png"
+  },
+  {
+    "name_en": "Rough Gem",
+    "name_zh": "粗糙宝石",
+    "effect_en": "",
+    "effect_zh": "打出的每张方块牌在计分时获得 $1",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Rough_Gem.png"
+  },
+  {
+    "name_en": "Glass Joker",
+    "name_zh": "玻璃小丑",
+    "effect_en": "",
+    "effect_zh": "每有一张玻璃牌被销毁，永久 ×0.75 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Glass_Joker.png"
+  },
+  {
+    "name_en": "Showman",
+    "name_zh": "表演者",
+    "effect_en": "",
+    "effect_zh": "小丑牌、塔罗牌、星球牌和幽灵牌可以重复出现",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Showman.png"
+  },
+  {
+    "name_en": "Flower Pot",
+    "name_zh": "花盆",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌中包含方块、梅花、红心和黑桃各至少一张，×3 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Flower_Pot.png"
+  },
+  {
+    "name_en": "Blueprint",
+    "name_zh": "蓝图",
+    "effect_en": "",
+    "effect_zh": "复制右侧小丑牌的能力",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Blueprint.png"
+  },
+  {
+    "name_en": "Wee Joker",
+    "name_zh": "小小丑",
+    "effect_en": "",
+    "effect_zh": "打出的每张2在计分时，永久 +8 筹码",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Wee_Joker.png"
+  },
+  {
+    "name_en": "Merry Andy",
+    "name_zh": "快乐安迪",
+    "effect_en": "",
+    "effect_zh": "每回合 +3 弃牌次数，手牌上限 -1",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Merry_Andy.png"
+  },
+  {
+    "name_en": "Oops! All 6s",
+    "name_zh": "全是6！",
+    "effect_en": "",
+    "effect_zh": "所有概率翻倍（如 1/3 变为 1/6 等）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Oops_All_6s.png"
+  },
+  {
+    "name_en": "The Idol",
+    "name_zh": "偶像",
+    "effect_en": "",
+    "effect_zh": "打出的指定牌在计分时 ×2 倍率（每回合变化）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "The_Idol.png"
+  },
+  {
+    "name_en": "Seeing Double",
+    "name_zh": "重影",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌包含一张计分的梅花牌和一张计分的其他花色牌，×2 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Seeing_Double.png"
+  },
+  {
+    "name_en": "Matador",
+    "name_zh": "斗牛士",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌触发了Boss盲注的能力，获得 $8",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Matador.png"
+  },
+  {
+    "name_en": "Hit the Road",
+    "name_zh": "上路",
+    "effect_en": "",
+    "effect_zh": "每弃掉一张J，本回合 ×0.5 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Hit_the_Road.png"
+  },
+  {
+    "name_en": "The Duo",
+    "name_zh": "二人组",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌包含对子，×2 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "The_Duo.png"
+  },
+  {
+    "name_en": "The Trio",
+    "name_zh": "三人组",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌包含三条，×2 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "The_Trio.png"
+  },
+  {
+    "name_en": "The Family",
+    "name_zh": "家族",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌包含四条，×4 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "The_Family.png"
+  },
+  {
+    "name_en": "The Order",
+    "name_zh": "秩序",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌包含顺子，×3 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "The_Order.png"
+  },
+  {
+    "name_en": "The Tribe",
+    "name_zh": "部落",
+    "effect_en": "",
+    "effect_zh": "如果打出的牌包含同花，×2 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "The_Tribe.png"
+  },
+  {
+    "name_en": "Stuntman",
+    "name_zh": "特技演员",
+    "effect_en": "",
+    "effect_zh": "+250 筹码，手牌上限 -2",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Stuntman.png"
+  },
+  {
+    "name_en": "Invisible Joker",
+    "name_zh": "隐形小丑",
+    "effect_en": "",
+    "effect_zh": "经过2回合后，售出此牌以复制一张随机小丑牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Invisible_Joker.png"
+  },
+  {
+    "name_en": "Brainstorm",
+    "name_zh": "头脑风暴",
+    "effect_en": "",
+    "effect_zh": "复制最左侧小丑牌的能力",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Brainstorm.png"
+  },
+  {
+    "name_en": "Satellite",
+    "name_zh": "卫星",
+    "effect_en": "",
+    "effect_zh": "每回合结束时，每使用过一种星球牌获得 $1",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Satellite.png"
+  },
+  {
+    "name_en": "Shoot the Moon",
+    "name_zh": "射月",
+    "effect_en": "",
+    "effect_zh": "手牌中每有一张Q +13 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Shoot_the_Moon.png"
+  },
+  {
+    "name_en": "Driver's License",
+    "name_zh": "驾照",
+    "effect_en": "",
+    "effect_zh": "如果牌组中有16张或更多增强牌，×3 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Drivers_License.png"
+  },
+  {
+    "name_en": "Cartomancer",
+    "name_zh": "占卜师",
+    "effect_en": "",
+    "effect_zh": "选择盲注时生成一张塔罗牌",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Cartomancer.png"
+  },
+  {
+    "name_en": "Astronomer",
+    "name_zh": "天文学家",
+    "effect_en": "",
+    "effect_zh": "所有星球牌和天体包在商店中免费",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Astronomer.png"
+  },
+  {
+    "name_en": "Burnt Joker",
+    "name_zh": "烧焦小丑",
+    "effect_en": "",
+    "effect_zh": "每回合弃掉的第一手牌中的每张牌都会升级",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Burnt_Joker.png"
+  },
+  {
+    "name_en": "Bootstraps",
+    "name_zh": "自助",
+    "effect_en": "",
+    "effect_zh": "每拥有 $5 +2 倍率（最低 $0）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Bootstraps.png"
+  },
+  {
+    "name_en": "Canio",
+    "name_zh": "卡尼奥",
+    "effect_en": "",
+    "effect_zh": "传奇小丑。每有一张人头牌被销毁，永久 ×1 倍率（当前 ×1 倍率）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Canio.png"
+  },
+  {
+    "name_en": "Triboulet",
+    "name_zh": "特里布莱",
+    "effect_en": "",
+    "effect_zh": "传奇小丑。打出的K和Q在计分时 ×2 倍率",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Triboulet.png"
+  },
+  {
+    "name_en": "Yorick",
+    "name_zh": "约里克",
+    "effect_en": "",
+    "effect_zh": "传奇小丑。每弃掉23张牌后 ×1 倍率（当前 ×1 倍率）",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Yorick.png"
+  },
+  {
+    "name_en": "Chicot",
+    "name_zh": "希科",
+    "effect_en": "",
+    "effect_zh": "传奇小丑。禁用每个Boss盲注的能力",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Chicot.png"
+  },
+  {
+    "name_en": "Perkeo",
+    "name_zh": "佩尔凯奥",
+    "effect_en": "",
+    "effect_zh": "传奇小丑。离开商店时，为每张消耗牌生成一张负片版本的复制品",
+    "rarity": "Common",
+    "price": 0,
+    "image": "Perkeo.png"
+  }
+]
