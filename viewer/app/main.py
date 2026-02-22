@@ -575,11 +575,19 @@ header h1{font-size:1.5rem}header h1 span{color:var(--accent)}
 .lightbox{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.92);z-index:100;justify-content:center;align-items:center}
 .lightbox.active{display:flex}.lightbox img{max-width:95%;max-height:95%;object-fit:contain}
 .lightbox .close{position:absolute;top:1rem;right:1.5rem;font-size:2rem;color:#fff;cursor:pointer}
+.run-table.sortable th{cursor:pointer;user-select:none;position:relative}
+.run-table.sortable th:hover{color:var(--text)}
+.run-table.sortable th.sort-asc::after{content:' ▲';font-size:.65rem}
+.run-table.sortable th.sort-desc::after{content:' ▼';font-size:.65rem}
+th[data-tooltip]{position:relative}
+th[data-tooltip]:hover::after{content:attr(data-tooltip);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:4px 8px;border-radius:4px;font-size:.75rem;white-space:nowrap;z-index:10;font-weight:normal;text-transform:none}
+.joker-chip{display:inline-flex;align-items:center;background:var(--surface);padding:2px 8px;border-radius:4px;font-size:.85rem;margin:2px;cursor:default}
+.joker-chip:hover{background:var(--card)}
 """
 
 
 def _header():
-    return '<header><div class="container"><h1><a href="/balatro/" style="color:inherit;text-decoration:none">🃏 <span>Balatro</span> Playground</a></h1></div></header>'
+    return '<header><div class="container" style="display:flex;align-items:center;justify-content:space-between"><h1><a href="/balatro/" style="color:inherit;text-decoration:none">🃏 <span>Balatro</span> Playground</a></h1><nav style="display:flex;gap:1.5rem"><a href="/balatro/validation" style="color:var(--muted);text-decoration:none;font-size:.9rem">🔬 验证</a></nav></div></header>'
 
 
 def _game_log_css():
@@ -618,6 +626,29 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')document.get
 
 def _html_escape(s):
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+
+def _joker_card_html(name: str, catalog_map: dict = None, compact: bool = False) -> str:
+    """Render a joker card with image, name, and description.
+    compact=True renders a small inline version."""
+    cj = (catalog_map or {}).get(name.lower(), {})
+    img = f'/balatro/joker-images/{cj["image"]}' if cj.get("image") else ""
+    name_zh = cj.get("name_zh", "")
+    effect = cj.get("effect", "")
+    if compact:
+        if img:
+            return f'<span class="joker-chip" title="{_html_escape(effect)}"><img src="{img}" style="width:20px;height:20px;vertical-align:middle;margin-right:3px">{_html_escape(name)}</span>'
+        return f'<span class="joker-chip" title="{_html_escape(effect)}">{_html_escape(name)}</span>'
+    h = '<div class="joker-card">'
+    if img:
+        h += f'<img src="{img}" alt="{_html_escape(name)}">'
+    h += f'<div class="joker-info"><div class="name-en">{_html_escape(name)}</div>'
+    if name_zh:
+        h += f'<div class="name-zh">{_html_escape(name_zh)}</div>'
+    if effect:
+        h += f'<div class="effect">{_html_escape(effect)}</div>'
+    h += '</div></div>'
+    return h
 
 def _code_with_lines(code: str) -> str:
     """Wrap each line in a span for line numbering, escape HTML."""
@@ -717,11 +748,6 @@ async def page_game_detail(run_code: str):
     rc = run["run_code"]
     is_running = run["status"] == "running"
     dur = f'{round(run["duration_seconds"] / 60)}分钟' if run.get("duration_seconds") else "-"
-    cost = f'${float(run["llm_cost_usd"]):.4f}' if run.get("llm_cost_usd") else "-"
-    rd = run.get("rule_decisions") or 0
-    ld = run.get("llm_decisions") or 0
-    td = rd + ld
-    ratio = f"{round(rd / td * 100)}%" if td > 0 else "-"
     icon = "🔄" if is_running else ("🏆" if run.get("won") else "💀")
     status_badge = ' <span class="badge running">运行中</span>' if is_running else ""
 
@@ -743,15 +769,18 @@ async def page_game_detail(run_code: str):
     else:
         err_val = "-"
 
+    # Weighted score for this run
+    fa = run.get("final_ante") or 0
+    ws = 2 ** (fa - 1) if fa > 0 else 0
+
     for v, lbl in [
         (f"Ante {run.get('final_ante', '?')}", "关卡"),
+        (ws, "加权分"),
         (run.get("hands_played", 0), "出牌"),
         (run.get("discards_used", 0), "弃牌"),
         (run.get("purchases", 0), "购买"),
-        (ratio, "Rule率"),
         (err_val, "估分误差"),
         (dur, "耗时"),
-        (cost, "LLM成本"),
     ]:
         h += f'<div class="stat"><div class="val">{v}</div><div class="lbl">{lbl}</div></div>'
     h += "</div></div>"
@@ -1260,6 +1289,7 @@ async def page_strategy_detail(strategy_id: int):
     wins = sum(1 for r in runs if r.get("won"))
     win_rate = f"{round(wins / total * 100)}%" if total > 0 else "-"
     avg_ante = round(sum(r.get("final_ante") or 0 for r in runs) / total, 1) if total > 0 else "-"
+    weighted_score = round(sum(2 ** ((r.get("final_ante") or 1) - 1) for r in runs if r.get("final_ante")) / max(total, 1), 1) if total > 0 else "-"
 
     # Strategy tree: ancestors + children
     ancestors = []
@@ -1330,7 +1360,7 @@ pre.code code .line::before{{counter-increment:line;content:counter(line);positi
 
     # Stats
     h += '<div class="detail-stats">'
-    for v, lbl in [(total, "总局数"), (wins, "胜场"), (win_rate, "胜率"), (avg_ante, "平均Ante")]:
+    for v, lbl in [(total, "总局数"), (wins, "胜场"), (win_rate, "胜率"), (avg_ante, "平均Ante"), (weighted_score, "加权分")]:
         h += f'<div class="stat"><div class="val">{v}</div><div class="lbl">{lbl}</div></div>'
     h += "</div></div>"
 
@@ -1346,25 +1376,15 @@ pre.code code .line::before{{counter-increment:line;content:counter(line);positi
             h += '<div class="section"><h3>💻 策略代码</h3>'
         h += f'<pre class="code"><code class="language-python">{_code_with_lines(source_code)}</code></pre></div>'
 
-    # 3. LLM Prompt - extract from source code
-    llm_prompt = ""
-    if source_code and 'SYSTEM_PROMPT' in source_code:
-        import re
-        m = re.search(r'SYSTEM_PROMPT\s*=\s*"""(.*?)"""', source_code, re.DOTALL)
-        if m:
-            llm_prompt = m.group(1).strip()
-    if llm_prompt:
-        h += f'<div class="section"><h3>🤖 LLM 提示词</h3><pre class="code"><code class="language-markdown">{_code_with_lines(llm_prompt)}</code></pre></div>'
-
-    # 4. LLM Model
-    h += f'<div class="section"><h3>🧪 LLM 模型</h3><div style="background:var(--surface);padding:1rem;border-radius:8px;font-family:monospace;font-size:1rem;color:var(--gold)">{_html_escape(model)}</div></div>'
-
-    # 5. Params
+    # Params (filter out LLM-related params)
+    llm_param_keys = {"model", "max_tokens", "llm_threshold"}
     if params:
-        h += '<div class="section"><h3>⚙️ 策略参数</h3><div style="background:var(--surface);padding:1rem;border-radius:8px;font-family:monospace;font-size:.9rem">'
-        for k, v in params.items():
-            h += f'<div>{k}: <span style="color:var(--gold)">{v}</span></div>'
-        h += "</div></div>"
+        filtered_params = {k: v for k, v in params.items() if k not in llm_param_keys}
+        if filtered_params:
+            h += '<div class="section"><h3>⚙️ 策略参数</h3><div style="background:var(--surface);padding:1rem;border-radius:8px;font-family:monospace;font-size:.9rem">'
+            for k, v in filtered_params.items():
+                h += f'<div>{k}: <span style="color:var(--gold)">{v}</span></div>'
+            h += "</div></div>"
 
     # Batch runs for this strategy
     batch_runs = await db_pool.fetch(
@@ -1377,11 +1397,12 @@ pre.code code .line::before{{counter-increment:line;content:counter(line);positi
 
     if batch_runs:
         h += f'<div class="section"><h3>📊 Batch 评估 ({len(batch_runs)})</h3>'
-        h += '<table class="run-table"><thead><tr><th>名称</th><th>种子数</th><th>状态</th><th>平均Ante</th><th>最高Ante</th><th>时间</th></tr></thead><tbody>'
+        h += '<table class="run-table sortable"><thead><tr><th>名称</th><th>种子数</th><th>状态</th><th data-tooltip="sum(2^(ante-1)) / N">加权分</th><th>最高Ante</th><th>时间</th></tr></thead><tbody>'
         for br in batch_runs:
             bname = br["batch_name"] or f"Batch #{br['batch_id']}"
             bstats = (json.loads(br["stats"]) if isinstance(br["stats"], str) else br["stats"]) if br["stats"] else {}
             bavg = bstats.get("avg_ante", "-")
+            bws = bstats.get("weighted_score", bavg)  # fallback to avg_ante if no weighted_score
             bmax = bstats.get("max_ante", "-")
             bstatus = br["status"]
             if bstatus == "completed":
@@ -1393,7 +1414,7 @@ pre.code code .line::before{{counter-increment:line;content:counter(line);positi
             bcreated = br["created_at"].astimezone(sgt).strftime("%m/%d %H:%M") if br["created_at"] else ""
             h += f'<tr onclick="location.href=\'/balatro/batch/{br["batch_id"]}\'" style="cursor:pointer">'
             h += f'<td>{_html_escape(bname)}</td><td>{br["seed_count"]}</td><td>{bbadge}</td>'
-            h += f'<td>{bavg}</td><td>{bmax}</td><td>{bcreated}</td></tr>'
+            h += f'<td>{bws}</td><td>{bmax}</td><td>{bcreated}</td></tr>'
         h += '</tbody></table></div>'
 
     # Runs table
@@ -1478,7 +1499,36 @@ async def page_seed_detail(seed_val: str):
 <div class="detail-stats">"""
     for v, lbl in [(total, "运行次数"), (wins, "胜场"), (best_ante, "最佳Ante"), (len(strategies_used), "策略数")]:
         h += f'<div class="stat"><div class="val">{v}</div><div class="lbl">{lbl}</div></div>'
-    h += "</div></div>"
+    h += "</div>"
+
+    # Seed tier rating from seed sets
+    seed_tier_info = None
+    tier_rows = await db_pool.fetch("SELECT seed_tiers FROM balatro_seed_sets WHERE seed_tiers IS NOT NULL")
+    for tr in tier_rows:
+        raw = tr["seed_tiers"]
+        tiers = json.loads(raw) if isinstance(raw, str) else (raw or {})
+        if seed_val in tiers:
+            seed_tier_info = tiers[seed_val]
+            break
+
+    if seed_tier_info and isinstance(seed_tier_info, dict):
+        tier = seed_tier_info.get("tier", "?")
+        tier_colors = {"S": "#e74c3c", "A": "#e67e22", "B": "#3498db", "C": "#95a5a6"}
+        tc = tier_colors.get(tier, "#666")
+        h += f'<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:.75rem;align-items:center">'
+        h += f'<div style="background:{tc};color:#fff;padding:.3rem .8rem;border-radius:6px;font-weight:700;font-size:1.2rem">{tier} 级</div>'
+        for dim_val, dim_lbl in [
+            (seed_tier_info.get("score"), "综合分"),
+            (seed_tier_info.get("s_tier_count"), "S级Joker数"),
+            (seed_tier_info.get("a_tier_count"), "A级Joker数"),
+            (seed_tier_info.get("xmult_count"), "xMult Joker数"),
+            (seed_tier_info.get("best_joker"), "最佳Joker"),
+        ]:
+            if dim_val is not None:
+                h += f'<div style="background:var(--surface);padding:.3rem .6rem;border-radius:6px;font-size:.85rem"><span style="color:var(--muted)">{dim_lbl}:</span> <span style="color:var(--gold)">{dim_val}</span></div>'
+        h += '</div>'
+
+    h += "</div>"
 
     if strategies_used:
         # Build name->id map
@@ -1497,6 +1547,7 @@ async def page_seed_detail(seed_val: str):
 
     # Shop analysis section
     if shop_analysis:
+        catalog_map = _build_card_catalog_map()
         summary = shop_analysis.get("summary", {})
         builds = summary.get("suggested_builds", [])
         high_tier = summary.get("high_tier_jokers", [])
@@ -1511,13 +1562,13 @@ async def page_seed_detail(seed_val: str):
                 unique_xm = list(dict.fromkeys(xmult))
                 h += f'<div class="card" style="flex:1;min-width:150px;padding:.8rem;border-left:4px solid #e74c3c"><div style="font-weight:600;color:#e74c3c">xMult Jokers ({len(unique_xm)})</div>'
                 for j in unique_xm:
-                    h += f'<div style="font-size:.85rem">• {_html_escape(j)}</div>'
+                    h += f'<div style="padding:2px 0">{_joker_card_html(j, catalog_map, compact=True)}</div>'
                 h += '</div>'
             if high_tier:
                 unique_ht = list(dict.fromkeys(high_tier))
                 h += f'<div class="card" style="flex:1;min-width:150px;padding:.8rem;border-left:4px solid #e67e22"><div style="font-weight:600;color:#e67e22">高价值 Jokers ({len(unique_ht)})</div>'
                 for j in unique_ht:
-                    h += f'<div style="font-size:.85rem">• {_html_escape(j)}</div>'
+                    h += f'<div style="padding:2px 0">{_joker_card_html(j, catalog_map, compact=True)}</div>'
                 h += '</div>'
             if builds:
                 h += '<div class="card" style="flex:1;min-width:150px;padding:.8rem;border-left:4px solid #2ecc71"><div style="font-weight:600;color:#2ecc71">推荐路线</div>'
@@ -1542,7 +1593,7 @@ async def page_seed_detail(seed_val: str):
                         tc = tier_colors_shop.get(tier, "#666")
                         xm_badge = ' <span style="background:#e74c3c;color:#fff;padding:1px 4px;border-radius:3px;font-size:.7rem">xMult</span>' if item.get("xmult") else ""
                         edition = f' ({item["edition"]})' if item.get("edition") and item["edition"] != "base" else ""
-                        h += f'<div style="font-size:.85rem;padding:2px 0"><span style="color:{tc};font-weight:600">[{tier}]</span> {_html_escape(item["name"])}{edition} <span style="color:var(--muted)">${item["cost"]}</span>{xm_badge}</div>'
+                        h += f'<div style="font-size:.85rem;padding:2px 0"><span style="color:{tc};font-weight:600">[{tier}]</span> {_joker_card_html(item["name"], catalog_map, compact=True)}{edition} <span style="color:var(--muted)">${item["cost"]}</span>{xm_badge}</div>'
                     else:
                         h += f'<div style="font-size:.85rem;padding:2px 0;color:var(--muted)">🃏 {_html_escape(item["name"])} <span>${item.get("cost", "?")}</span></div>'
                 if shop_data.get("voucher"):
@@ -1643,10 +1694,10 @@ async def page_batch_detail(batch_id: int):
     antes = [r["final_ante"] for r in runs if r["final_ante"]]
     avg_ante = round(sum(antes) / len(antes), 1) if antes else "-"
     max_ante = max(antes) if antes else "-"
+    weighted_score = round(sum(2 ** (a - 1) for a in antes) / len(antes), 1) if antes else "-"
     wins = sum(1 for r in runs if r.get("won"))
     total_hands = sum(r["hands_played"] or 0 for r in runs)
     total_discards = sum(r["discards_used"] or 0 for r in runs)
-    total_cost = sum(float(r["llm_cost_usd"] or 0) for r in runs)
     completed = len([r for r in runs if r["status"] in ("completed", "failed")])
 
     if status == "completed":
@@ -1719,13 +1770,11 @@ async def page_batch_detail(batch_id: int):
 <div class="stat-card"><div class="label">策略</div><div class="value" style="font-size:1rem">{strategy_link}</div></div>
 <div class="stat-card"><div class="label">已完成</div><div class="value">{completed} <span style="font-size:.8rem;color:var(--muted)">/ {seeds} seeds</span></div></div>
 <div class="stat-card"><div class="label">目标关卡</div><div class="value">{stop}</div></div>
+<div class="stat-card"><div class="label">加权分</div><div class="value">{weighted_score}</div></div>
 <div class="stat-card"><div class="label">平均 Ante</div><div class="value">{avg_ante}</div></div>
 <div class="stat-card"><div class="label">最高 Ante</div><div class="value">{max_ante}</div></div>
 <div class="stat-card"><div class="label">胜率</div><div class="value">{wins}/{len(runs)}</div></div>
 <div class="stat-card"><div class="label">总出牌 / 弃牌</div><div class="value">{total_hands} / {total_discards}</div></div>"""
-
-    if total_cost > 0:
-        h += f'<div class="stat-card"><div class="label">总 LLM 成本</div><div class="value">${total_cost:.4f}</div></div>'
 
     if avg_err is not None:
         h += f'<div class="stat-card"><div class="label">估分误差</div><div class="value">{avg_err}%<span style="font-size:.8rem;color:var(--muted)"> avg / {max_err}% max</span></div></div>'
@@ -1798,14 +1847,14 @@ async def page_batch_detail(batch_id: int):
     tier_th = '<th>评级</th>' if has_tier_col else ''
     h += f"""<div class="stat-card" style="margin-top:1rem">
 <div class="label" style="margin-bottom:.8rem">每局详情</div>
-<table class="run-table"><thead><tr>
-<th>种子</th>{tier_th}<th>进度</th><th>决策</th><th>耗时</th>
+<table class="run-table sortable"><thead><tr>
+<th>种子</th>{tier_th}<th>进度</th><th data-tooltip="sum(2^(ante-1))">加权分</th><th>耗时</th>
 </tr></thead><tbody>"""
 
     for r in runs:
         rc = r["run_code"]
         seed = r["seed"] or "-"
-        ante = r["final_ante"] or "?"
+        fa = r["final_ante"] or 0
         if r["status"] == "running":
             prog = '<span class="badge running">运行中</span>'
         elif r.get("won"):
@@ -1814,10 +1863,7 @@ async def page_batch_detail(batch_id: int):
             prog_text = _format_progress_numeric(r.get("progress"), r.get("final_ante"))
             prog = f'<span class="badge loss">{prog_text}</span>'
 
-        rd = r["rule_decisions"] or 0
-        ld = r["llm_decisions"] or 0
-        td = rd + ld
-        decisions = f"{td} <span style='color:var(--muted);font-size:.8rem'>({rd}R/{ld}L)</span>" if td > 0 else "-"
+        run_ws = 2 ** (fa - 1) if fa > 0 else 0
         dur = f'{round(r["duration_seconds"])}s' if r.get("duration_seconds") else "-"
 
         h += f'<tr onclick="location.href=\'/balatro/game/{rc}\'" style="cursor:pointer">'
@@ -1828,7 +1874,7 @@ async def page_batch_detail(batch_id: int):
             tcolor = tier_colors_b.get(tier, "#666")
             h += f'<td><span style="background:{tcolor};color:#fff;padding:2px 6px;border-radius:4px;font-weight:700;font-size:.8rem">{tier}</span></td>'
         h += f'<td>{prog}</td>'
-        h += f'<td>{decisions}</td><td>{dur}</td></tr>'
+        h += f'<td>{run_ws}</td><td>{dur}</td></tr>'
 
     h += """</tbody></table></div>
 </div></div></div></body></html>"""
@@ -1958,10 +2004,10 @@ async def page_seedset_detail(seedset_id: int):
     # Batches using this seed set
     if batches:
         h += '<h3 style="margin-top:1.5rem">📊 关联批量</h3>'
-        h += '<table class="run-table"><thead><tr><th>名称</th><th>策略</th><th>状态</th><th>平均Ante</th><th>时间</th></tr></thead><tbody>'
+        h += '<table class="run-table sortable"><thead><tr><th>名称</th><th>策略</th><th>状态</th><th data-tooltip="sum(2^(ante-1)) / N">加权分</th><th>时间</th></tr></thead><tbody>'
         for b in batches:
             bstats = json.loads(b["stats"]) if isinstance(b["stats"], str) else (b["stats"] or {})
-            bavg = bstats.get("avg_ante", "-")
+            bavg = bstats.get("weighted_score", bstats.get("avg_ante", "-"))
             bstatus = b["status"] or "pending"
             badge = '<span class="badge win">完成</span>' if bstatus == "completed" else f'<span class="badge loss">{bstatus}</span>'
             bt = b["created_at"].astimezone(sgt).strftime("%m/%d %H:%M") if b.get("created_at") else ""
@@ -1971,6 +2017,244 @@ async def page_seedset_detail(seedset_id: int):
             h += f'<td>{bname}</td><td>{b["strategy_name"] or "-"}</td>'
             h += f'<td>{badge}</td><td>{bavg}</td><td>{bt}</td></tr>'
         h += '</tbody></table>'
+
+    h += '</div></body></html>'
+    return HTMLResponse(h)
+
+
+# ============================================================
+# Simulator Validation
+# ============================================================
+
+@app.get("/api/validation/{batch_id}")
+async def api_validation(batch_id: int):
+    """Get validation results for a batch."""
+    rows = await db_pool.fetch(
+        """SELECT seed, category, ante, status, expected, actual, detail
+           FROM balatro_sim_validation
+           WHERE batch_id = $1
+           ORDER BY seed, ante, category""", batch_id)
+    return [dict(r) for r in rows]
+
+
+@app.get("/api/validation/summary/{batch_id}")
+async def api_validation_summary(batch_id: int):
+    """Get validation summary for a batch."""
+    row = await db_pool.fetchrow("""
+        SELECT
+            COUNT(*) FILTER (WHERE status = 'PASS') as passed,
+            COUNT(*) FILTER (WHERE status = 'FAIL') as failed,
+            COUNT(*) FILTER (WHERE status = 'WARN') as warnings,
+            COUNT(DISTINCT seed) as seeds_checked,
+            COUNT(*) FILTER (WHERE status = 'FAIL' AND category = 'scoring') as scoring_fails,
+            COUNT(*) FILTER (WHERE status = 'FAIL' AND category = 'shop_joker') as shop_fails,
+            COUNT(*) FILTER (WHERE status = 'FAIL' AND category = 'shop_contents') as shop_contents_fails
+        FROM balatro_sim_validation WHERE batch_id = $1
+    """, batch_id)
+    if not row or (row["passed"] == 0 and row["failed"] == 0):
+        return {"has_data": False}
+    total = row["passed"] + row["failed"]
+    return {
+        "has_data": True,
+        "passed": row["passed"],
+        "failed": row["failed"],
+        "warnings": row["warnings"],
+        "seeds_checked": row["seeds_checked"],
+        "accuracy": round(row["passed"] / total * 100, 1) if total > 0 else 0,
+        "scoring_fails": row["scoring_fails"],
+        "shop_fails": row["shop_fails"] + row["shop_contents_fails"],
+    }
+
+
+@app.get("/validation", response_class=HTMLResponse)
+async def page_validation(request: Request):
+    """Simulator validation overview page."""
+    from datetime import timezone, timedelta
+    sgt = timezone(timedelta(hours=8))
+
+    # Get all batches that have validation data
+    batches = await db_pool.fetch("""
+        SELECT b.id, b.name, b.created_at,
+            COUNT(*) FILTER (WHERE v.status = 'PASS') as passed,
+            COUNT(*) FILTER (WHERE v.status = 'FAIL') as failed,
+            COUNT(*) FILTER (WHERE v.status = 'WARN') as warnings,
+            COUNT(DISTINCT v.seed) as seeds_checked,
+            COUNT(*) FILTER (WHERE v.status = 'FAIL' AND v.category = 'scoring') as scoring_fails,
+            COUNT(*) FILTER (WHERE v.status = 'FAIL' AND v.category LIKE 'shop%') as shop_fails
+        FROM balatro_batches b
+        JOIN balatro_sim_validation v ON v.batch_id = b.id
+        GROUP BY b.id, b.name, b.created_at
+        ORDER BY b.created_at DESC
+    """)
+
+    # Also get batches without validation for "run validation" button
+    unvalidated = await db_pool.fetch("""
+        SELECT b.id, b.name, b.created_at, b.seed_count
+        FROM balatro_batches b
+        LEFT JOIN balatro_sim_validation v ON v.batch_id = b.id
+        WHERE v.id IS NULL
+        AND EXISTS (SELECT 1 FROM balatro_batch_runs br WHERE br.batch_id = b.id AND br.status = 'completed')
+        ORDER BY b.created_at DESC LIMIT 10
+    """)
+
+    h = f"""<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>模拟器验证 | Balatro Playground</title><style>{_base_css()}
+.val-card{{background:var(--surface);border-radius:12px;padding:1.5rem;margin-bottom:1rem}}
+.val-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:1rem;margin:1rem 0}}
+.val-stat{{text-align:center;padding:.75rem;background:#1a1a2e;border-radius:8px}}
+.val-stat .num{{font-size:1.5rem;font-weight:700}}
+.val-stat .label{{font-size:.75rem;color:var(--muted);margin-top:.25rem}}
+.accuracy-bar{{height:8px;background:#333;border-radius:4px;overflow:hidden;margin:.5rem 0}}
+.accuracy-fill{{height:100%;border-radius:4px;transition:width .3s}}
+</style></head><body>
+{_header()}<div class="container">
+<h2 style="margin-bottom:1.5rem">🔬 模拟器验证</h2>
+<p style="color:var(--muted);margin-bottom:2rem">对比模拟器输出与真实游戏日志，追踪 shop 生成和 scoring 引擎的准确率</p>
+"""
+
+    if batches:
+        h += '<div class="val-card"><h3 style="margin-bottom:1rem">已验证的批次</h3>'
+        h += '<table class="run-table"><thead><tr><th>批次</th><th>种子数</th><th>准确率</th><th>通过</th><th>失败</th><th>Shop 差异</th><th>Scoring 差异</th><th>时间</th></tr></thead><tbody>'
+        for b in batches:
+            total = b["passed"] + b["failed"]
+            acc = round(b["passed"] / total * 100, 1) if total > 0 else 0
+            acc_color = "#4ade80" if acc >= 80 else "#fbbf24" if acc >= 50 else "#ef4444"
+            ct = b["created_at"].astimezone(sgt).strftime("%m/%d %H:%M") if b.get("created_at") else ""
+            bname = b["name"] or f"Batch #{b['id']}"
+            h += f'<tr onclick="location.href=\'/balatro/validation/{b["id"]}\'" style="cursor:pointer">'
+            h += f'<td><a href="/balatro/validation/{b["id"]}" style="color:var(--gold)">{_html_escape(bname)}</a></td>'
+            h += f'<td>{b["seeds_checked"]}</td>'
+            h += f'<td><span style="color:{acc_color};font-weight:700">{acc}%</span>'
+            h += f'<div class="accuracy-bar"><div class="accuracy-fill" style="width:{acc}%;background:{acc_color}"></div></div></td>'
+            h += f'<td style="color:#4ade80">{b["passed"]}</td>'
+            h += f'<td style="color:#ef4444">{b["failed"]}</td>'
+            h += f'<td>{b["shop_fails"]}</td><td>{b["scoring_fails"]}</td>'
+            h += f'<td>{ct}</td></tr>'
+        h += '</tbody></table></div>'
+
+    if unvalidated:
+        h += '<div class="val-card"><h3 style="margin-bottom:1rem">待验证的批次</h3>'
+        h += '<p style="color:var(--muted);font-size:.85rem;margin-bottom:1rem">这些已完成的批次还没有运行模拟器验证</p>'
+        h += '<table class="run-table"><thead><tr><th>批次</th><th>种子数</th><th>时间</th></tr></thead><tbody>'
+        for b in unvalidated:
+            ct = b["created_at"].astimezone(sgt).strftime("%m/%d %H:%M") if b.get("created_at") else ""
+            bname = b["name"] or f"Batch #{b['id']}"
+            h += f'<tr><td>{_html_escape(bname)}</td><td>{b["seed_count"]}</td><td>{ct}</td></tr>'
+        h += '</tbody></table></div>'
+
+    if not batches and not unvalidated:
+        h += '<div class="val-card"><p style="color:var(--muted)">暂无验证数据。运行 <code>python3 sim_validator.py --batch-id N --save</code> 生成验证报告。</p></div>'
+
+    h += '</div></body></html>'
+    return HTMLResponse(h)
+
+
+@app.get("/validation/{batch_id}", response_class=HTMLResponse)
+async def page_validation_detail(batch_id: int):
+    """Validation detail page for a specific batch."""
+    from datetime import timezone, timedelta
+    sgt = timezone(timedelta(hours=8))
+
+    batch = await db_pool.fetchrow("SELECT * FROM balatro_batches WHERE id = $1", batch_id)
+    if not batch:
+        raise HTTPException(404, "Batch not found")
+
+    # Get validation results grouped by seed
+    rows = await db_pool.fetch("""
+        SELECT seed, category, ante, status, expected, actual, detail
+        FROM balatro_sim_validation
+        WHERE batch_id = $1
+        ORDER BY seed, ante, category
+    """, batch_id)
+
+    # Summary stats
+    summary = await db_pool.fetchrow("""
+        SELECT
+            COUNT(*) FILTER (WHERE status = 'PASS') as passed,
+            COUNT(*) FILTER (WHERE status = 'FAIL') as failed,
+            COUNT(*) FILTER (WHERE status = 'WARN') as warnings,
+            COUNT(DISTINCT seed) as seeds_checked,
+            COUNT(*) FILTER (WHERE status = 'FAIL' AND category = 'scoring') as scoring_fails,
+            COUNT(*) FILTER (WHERE status = 'FAIL' AND category LIKE 'shop%') as shop_fails
+        FROM balatro_sim_validation WHERE batch_id = $1
+    """, batch_id)
+
+    total = (summary["passed"] + summary["failed"]) if summary else 0
+    acc = round(summary["passed"] / total * 100, 1) if total > 0 else 0
+    acc_color = "#4ade80" if acc >= 80 else "#fbbf24" if acc >= 50 else "#ef4444"
+    bname = batch["name"] or f"Batch #{batch_id}"
+
+    h = f"""<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>验证: {_html_escape(bname)} | Balatro Playground</title><style>{_base_css()}
+.val-card{{background:var(--surface);border-radius:12px;padding:1.5rem;margin-bottom:1rem}}
+.val-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:1rem;margin:1rem 0}}
+.val-stat{{text-align:center;padding:.75rem;background:#1a1a2e;border-radius:8px}}
+.val-stat .num{{font-size:1.8rem;font-weight:700}}
+.val-stat .label{{font-size:.75rem;color:var(--muted);margin-top:.25rem}}
+.accuracy-bar{{height:10px;background:#333;border-radius:5px;overflow:hidden;margin:.5rem 0}}
+.accuracy-fill{{height:100%;border-radius:5px}}
+.seed-section{{margin-bottom:1.5rem}}
+.seed-header{{font-weight:700;color:var(--gold);font-size:1rem;margin-bottom:.5rem;cursor:pointer}}
+.check-row{{display:flex;align-items:center;gap:.75rem;padding:.4rem .75rem;font-size:.85rem;border-left:3px solid #333;margin-bottom:.25rem;background:#1a1a2e;border-radius:0 6px 6px 0}}
+.check-row.pass{{border-left-color:#4ade80}}
+.check-row.fail{{border-left-color:#ef4444}}
+.check-row.warn{{border-left-color:#fbbf24}}
+.check-badge{{font-size:.7rem;font-weight:700;padding:2px 6px;border-radius:4px;min-width:36px;text-align:center}}
+.check-badge.pass{{background:#4ade8033;color:#4ade80}}
+.check-badge.fail{{background:#ef444433;color:#ef4444}}
+.check-badge.warn{{background:#fbbf2433;color:#fbbf24}}
+</style></head><body>
+{_header()}<div class="container">
+<div style="margin-bottom:1rem"><a href="/balatro/validation" style="color:var(--gold);text-decoration:none">← 验证列表</a></div>
+<h2 style="margin-bottom:.5rem">🔬 {_html_escape(bname)}</h2>
+
+<div class="val-card">
+<div class="val-grid">
+<div class="val-stat"><div class="num" style="color:{acc_color}">{acc}%</div><div class="label">准确率</div></div>
+<div class="val-stat"><div class="num">{summary["seeds_checked"] if summary else 0}</div><div class="label">种子数</div></div>
+<div class="val-stat"><div class="num" style="color:#4ade80">{summary["passed"] if summary else 0}</div><div class="label">通过</div></div>
+<div class="val-stat"><div class="num" style="color:#ef4444">{summary["failed"] if summary else 0}</div><div class="label">失败</div></div>
+<div class="val-stat"><div class="num">{summary["shop_fails"] if summary else 0}</div><div class="label">Shop 差异</div></div>
+<div class="val-stat"><div class="num">{summary["scoring_fails"] if summary else 0}</div><div class="label">Scoring 差异</div></div>
+</div>
+<div class="accuracy-bar"><div class="accuracy-fill" style="width:{acc}%;background:{acc_color}"></div></div>
+</div>
+"""
+
+    # Group by seed
+    seed_checks = {}
+    for r in rows:
+        s = r["seed"]
+        if s not in seed_checks:
+            seed_checks[s] = []
+        seed_checks[s].append(r)
+
+    for seed, checks in seed_checks.items():
+        passed = sum(1 for c in checks if c["status"] == "PASS")
+        failed = sum(1 for c in checks if c["status"] == "FAIL")
+        total_s = passed + failed
+        seed_acc = round(passed / total_s * 100) if total_s > 0 else 0
+        seed_color = "#4ade80" if seed_acc >= 80 else "#fbbf24" if seed_acc >= 50 else "#ef4444"
+
+        h += f'<div class="seed-section"><div class="seed-header">'
+        h += f'<a href="/balatro/seed/{seed}" style="color:var(--gold)">{seed}</a>'
+        h += f' <span style="color:{seed_color};font-size:.85rem;font-weight:400">{seed_acc}% ({passed}/{total_s})</span></div>'
+
+        for c in checks:
+            status = c["status"].lower()
+            cat = c["category"]
+            ante = c["ante"] or "-"
+            detail = c["detail"] or ""
+            if len(detail) > 120:
+                detail = detail[:120] + "..."
+            h += f'<div class="check-row {status}">'
+            h += f'<span class="check-badge {status}">{c["status"]}</span>'
+            h += f'<span style="color:var(--muted);min-width:80px">[{cat}] A{ante}</span>'
+            h += f'<span>{_html_escape(detail)}</span></div>'
+
+        h += '</div>'
 
     h += '</div></body></html>'
     return HTMLResponse(h)
@@ -1992,8 +2276,9 @@ async def page_list(request: Request):
     games_offset = (games_page - 1) * per_page
     rows = await db_pool.fetch(
         """SELECT r.*, s.name as strategy_name, s.id as sid,
-           (SELECT COUNT(*) FROM balatro_screenshots sc WHERE sc.run_id = r.id) AS screenshot_count
+           br.batch_id as batch_id
            FROM balatro_runs r LEFT JOIN balatro_strategies s ON r.strategy_id = s.id
+           LEFT JOIN balatro_batch_runs br ON r.batch_run_id = br.id
            ORDER BY r.played_at DESC NULLS LAST LIMIT $1 OFFSET $2""",
         per_page, games_offset
     )
@@ -2017,6 +2302,9 @@ async def page_list(request: Request):
         """SELECT s.*,
            COUNT(r.id) as run_count,
            ROUND(AVG(r.final_ante)::numeric, 1) as avg_ante,
+           CASE WHEN COUNT(r.id) > 0
+                THEN ROUND((SUM(POWER(2, r.final_ante - 1)) / COUNT(r.id))::numeric, 1)
+                ELSE NULL END as weighted_score,
            SUM(CASE WHEN r.won THEN 1 ELSE 0 END) as wins
            FROM balatro_strategies s
            LEFT JOIN balatro_runs r ON r.strategy_id = s.id
@@ -2051,11 +2339,6 @@ async def page_list(request: Request):
         """SELECT b.id, b.name, b.seed_count, b.stop_after_ante, b.created_at,
            br.status as run_status, br.completed_runs, br.total_runs, br.stats,
            s.name as strategy_name, s.id as strategy_id,
-           (SELECT CASE WHEN SUM(COALESCE(r2.rule_decisions,0)) + SUM(COALESCE(r2.llm_decisions,0)) > 0
-                   THEN ROUND(SUM(COALESCE(r2.rule_decisions,0))::numeric * 100 /
-                        (SUM(COALESCE(r2.rule_decisions,0)) + SUM(COALESCE(r2.llm_decisions,0))), 1)
-                   ELSE NULL END
-            FROM balatro_runs r2 WHERE r2.batch_run_id = br.id) as rule_rate,
            (SELECT ROUND(AVG(ABS(gl.estimated_score - gl.actual_score)::numeric / NULLIF(gl.actual_score, 0) * 100), 1)
             FROM balatro_game_log gl JOIN balatro_runs r3 ON gl.run_id = r3.id
             WHERE r3.batch_run_id = br.id AND gl.estimated_score IS NOT NULL AND gl.actual_score IS NOT NULL AND gl.actual_score > 0) as score_error,
@@ -2102,7 +2385,7 @@ async def page_list(request: Request):
 <div class="tab" onclick="switchTab('strategies')">🧠 策略 ({strat_total})</div>
 </div>
 <div id="tab-games" class="tab-content active">
-<table class="run-table"><thead><tr><th>编号</th><th>进度</th><th>策略</th><th>种子</th><th>📷</th><th>出牌</th><th>弃牌</th><th>Rule率</th><th>估分误差</th><th>耗时</th><th>成本</th><th>时间</th></tr></thead><tbody>"""
+<table class="run-table sortable"><thead><tr><th>编号</th><th>进度</th><th>策略</th><th>种子</th><th>Batch</th><th>出牌</th><th>弃牌</th><th>估分误差</th><th>耗时</th><th>时间</th></tr></thead><tbody>"""
 
     for r in rows:
         rc = r["run_code"] or str(r["id"])
@@ -2118,12 +2401,7 @@ async def page_list(request: Request):
         seed = r.get("seed") or "-"
         if len(seed) > 8:
             seed = seed[:8]
-        rd = r.get("rule_decisions") or 0
-        ld = r.get("llm_decisions") or 0
-        td = rd + ld
-        ratio = f"{round(rd / td * 100)}%" if td > 0 else "-"
         dur = f'{round(r["duration_seconds"] / 60)}m' if r.get("duration_seconds") else "-"
-        cost = f'${float(r["llm_cost_usd"]):.4f}' if r.get("llm_cost_usd") else "-"
         t = r["played_at"].astimezone(sgt).strftime("%m/%d %H:%M") if r.get("played_at") else ""
 
         ss = score_map.get(r["id"])
@@ -2139,18 +2417,18 @@ async def page_list(request: Request):
         sid = r.get("sid")
         strategy_cell = f'<a href="/balatro/strategy/{sid}" onclick="event.stopPropagation()" style="color:var(--gold);font-size:.8rem">{_html_escape(sname)}</a>' if sid else "-"
 
-        # Screenshot icon
-        sc_count = r.get("screenshot_count") or 0
-        sc_icon = "🃏" if sc_count > 0 else ""
+        # Batch info
+        batch_id = r.get("batch_id")
+        batch_cell = f'<a href="/balatro/batch/{batch_id}" onclick="event.stopPropagation()" style="color:var(--gold);font-size:.8rem">B{batch_id}</a>' if batch_id else "-"
 
         # Clickable seed
         seed_cell = f'<a href="/balatro/seed/{seed}" onclick="event.stopPropagation()" style="font-family:monospace;font-size:.8rem;color:var(--muted)">{seed}</a>' if seed != "-" else "-"
 
         h += f'<tr onclick="location.href=\'/balatro/game/{rc}\'" style="cursor:pointer">'
         h += f'<td class="run-code">{rc}</td><td>{progress_cell}</td><td>{strategy_cell}</td><td>{seed_cell}</td>'
-        h += f'<td style="text-align:center">{sc_icon}</td>'
+        h += f'<td>{batch_cell}</td>'
         h += f'<td>{r.get("hands_played", 0)}</td><td>{r.get("discards_used", 0)}</td>'
-        h += f'<td>{ratio}</td><td>{err_cell}</td><td>{dur}</td><td>{cost}</td><td>{t}</td></tr>'
+        h += f'<td>{err_cell}</td><td>{dur}</td><td>{t}</td></tr>'
 
     h += "</tbody></table>"
     h += _pagination_html(games_page, games_total_pages, "gp", "games")
@@ -2158,7 +2436,7 @@ async def page_list(request: Request):
 
     # Batch tab (tab 2)
     h += '<div id="tab-batches" class="tab-content">'
-    h += '<table class="run-table"><thead><tr><th>编号</th><th>种子数</th><th>策略</th><th>状态</th><th>平均Ante</th><th>最高Ante</th><th>Rule率</th><th>估分误差</th><th>耗时</th><th>时间</th></tr></thead><tbody>'
+    h += '<table class="run-table sortable"><thead><tr><th>编号</th><th>种子数</th><th>策略</th><th>状态</th><th data-tooltip="sum(2^(ante-1)) / N">加权分</th><th>平均Ante</th><th>最高Ante</th><th>估分误差</th><th>耗时</th><th>时间</th></tr></thead><tbody>'
     for b in batch_rows:
         bid = b["id"]
         bseeds = b["seed_count"]
@@ -2177,6 +2455,7 @@ async def page_list(request: Request):
         if not norm_values and antes:
             norm_values = [float(a) for a in antes if a]
         bavg = round(sum(norm_values) / len(norm_values), 1) if norm_values else "-"
+        bws = round(sum(2 ** (v - 1) for v in norm_values) / len(norm_values), 1) if norm_values else "-"
         bmax = max(norm_values) if norm_values else "-"
         if isinstance(bmax, float):
             bmax = f'{bmax:.1f}' if bmax != int(bmax) else f'{int(bmax)}.0'
@@ -2193,19 +2472,18 @@ async def page_list(request: Request):
         bsid = b.get("strategy_id")
         bsname = b.get("strategy_name") or "-"
         bstrat_cell = f'<a href="/balatro/strategy/{bsid}" onclick="event.stopPropagation()" style="color:var(--gold);font-size:.85rem">{_html_escape(bsname)}</a>' if bsid else "-"
-        # Rule rate and score error
-        brule = f'{b["rule_rate"]}%' if b.get("rule_rate") is not None else "-"
+        # Score error
         berr = f'{b["score_error"]}%' if b.get("score_error") is not None else "-"
         h += f'<tr onclick="location.href=\'/balatro/batch/{bid}\'" style="cursor:pointer">'
         h += f'<td class="run-code">batch-{bid}</td><td>{bseeds}</td><td>{bstrat_cell}</td><td>{bbadge}</td>'
-        h += f'<td>{bavg}</td><td>{bmax}</td><td>{brule}</td><td>{berr}</td><td>{bdur_str}</td><td>{bcreated}</td></tr>'
+        h += f'<td>{bws}</td><td>{bavg}</td><td>{bmax}</td><td>{berr}</td><td>{bdur_str}</td><td>{bcreated}</td></tr>'
     h += '</tbody></table>'
     h += _pagination_html(batch_page, batch_total_pages, "bp", "batches")
     h += '</div>'
 
     # Seeds tab (tab 3)
     h += """<div id="tab-seeds" class="tab-content">
-<table class="run-table"><thead><tr><th>种子</th><th>运行次数</th><th>策略数</th><th>最佳Ante</th><th>平均Ante</th><th>胜率</th><th>首次使用</th></tr></thead><tbody>"""
+<table class="run-table sortable"><thead><tr><th>种子</th><th>运行次数</th><th>策略数</th><th>最佳Ante</th><th data-tooltip="sum(2^(ante-1)) / N">加权分</th><th>胜率</th><th>首次使用</th></tr></thead><tbody>"""
 
     for sd in seeds:
         seed_val = sd["seed"] or "-"
@@ -2223,13 +2501,13 @@ async def page_list(request: Request):
         if not sd_norm and sd_antes:
             sd_norm = [float(a) for a in sd_antes if a]
         ba = f'{max(sd_norm):.1f}' if sd_norm else "-"
-        aa = f'{round(sum(sd_norm)/len(sd_norm), 1)}' if sd_norm else "-"
+        sd_ws = f'{round(sum(2 ** (v - 1) for v in sd_norm) / len(sd_norm), 1)}' if sd_norm else "-"
         wins = sd["wins"] or 0
         wr = f"{round(wins / rc * 100)}%" if rc > 0 else "-"
         fp = sd["first_played"].astimezone(sgt).strftime("%m/%d %H:%M") if sd.get("first_played") else ""
         h += f'<tr onclick="location.href=\'/balatro/seed/{seed_val}\'" style="cursor:pointer">'
         h += f'<td class="run-code" style="font-family:monospace">{seed_val}</td>'
-        h += f'<td>{rc}</td><td>{sc}</td><td>{ba}</td><td>{aa}</td><td>{wr}</td><td>{fp}</td></tr>'
+        h += f'<td>{rc}</td><td>{sc}</td><td>{ba}</td><td>{sd_ws}</td><td>{wr}</td><td>{fp}</td></tr>'
 
     h += "</tbody></table>"
     h += _pagination_html(seeds_page, seeds_total_pages, "dp", "seeds")
@@ -2271,23 +2549,24 @@ async def page_list(request: Request):
 
     # Strategies tab (tab 5)
     h += """<div id="tab-strategies" class="tab-content">
-<table class="run-table"><thead><tr><th>策略名</th><th>模型</th><th>哈希</th><th>局数</th><th>胜率</th><th>平均Ante</th><th>演进自</th><th>创建时间</th></tr></thead><tbody>"""
+<table class="run-table sortable"><thead><tr><th>策略名</th><th>哈希</th><th>局数</th><th>胜率</th><th data-tooltip="sum(2^(ante-1)) / N">加权分</th><th>平均Ante</th><th>演进自</th><th>创建时间</th></tr></thead><tbody>"""
 
     for st in strategies:
         sname = st.get("name") or "未命名"
-        model = (st.get("model") or "-").split("/")[-1]
         chash = (st.get("code_hash") or "-")[:8]
         rc = st.get("run_count") or 0
         wins = st.get("wins") or 0
         wr = f"{round(wins / rc * 100)}%" if rc > 0 else "-"
         aa = st.get("avg_ante") or "-"
+        # Weighted score from query
+        sws = st.get("weighted_score") or "-"
         parent = ""
         if st.get("parent_id"):
             parent = f'<a href="/balatro/strategy/{st["parent_id"]}" style="color:var(--muted);font-size:.8rem">← 父策略</a>'
         ct = st["created_at"].astimezone(sgt).strftime("%m/%d %H:%M") if st.get("created_at") else ""
         h += f'<tr onclick="location.href=\'/balatro/strategy/{st["id"]}\'" style="cursor:pointer">'
-        h += f'<td class="run-code">{_html_escape(sname)}</td><td>{model}</td><td style="font-family:monospace;font-size:.8rem;color:var(--muted)">{chash}</td>'
-        h += f'<td>{rc}</td><td>{wr}</td><td>{aa}</td><td>{parent}</td><td>{ct}</td></tr>'
+        h += f'<td class="run-code">{_html_escape(sname)}</td><td style="font-family:monospace;font-size:.8rem;color:var(--muted)">{chash}</td>'
+        h += f'<td>{rc}</td><td>{wr}</td><td>{sws}</td><td>{aa}</td><td>{parent}</td><td>{ct}</td></tr>'
 
     h += "</tbody></table>"
     h += _pagination_html(strat_page, strat_total_pages, "sp", "strategies")
@@ -2301,6 +2580,29 @@ function switchTab(name){
   tabs.forEach(function(n){document.getElementById('tab-'+n).classList.toggle('active',n===name)});
 }
 var h=location.hash.replace('#','');if(tabs.indexOf(h)>=0)switchTab(h);
+
+// Sortable tables
+document.querySelectorAll('table.sortable').forEach(function(table){
+  var headers=table.querySelectorAll('th');
+  headers.forEach(function(th,colIdx){
+    th.addEventListener('click',function(){
+      var tbody=table.querySelector('tbody');
+      var rows=Array.from(tbody.querySelectorAll('tr'));
+      var asc=!th.classList.contains('sort-asc');
+      headers.forEach(function(h){h.classList.remove('sort-asc','sort-desc')});
+      th.classList.add(asc?'sort-asc':'sort-desc');
+      rows.sort(function(a,b){
+        var at=a.cells[colIdx].textContent.trim();
+        var bt=b.cells[colIdx].textContent.trim();
+        var an=parseFloat(at.replace(/[^0-9.\-]/g,''));
+        var bn=parseFloat(bt.replace(/[^0-9.\-]/g,''));
+        if(!isNaN(an)&&!isNaN(bn))return asc?an-bn:bn-an;
+        return asc?at.localeCompare(bt):bt.localeCompare(at);
+      });
+      rows.forEach(function(r){tbody.appendChild(r)});
+    });
+  });
+});
 </script>
 </div></body></html>"""
     return HTMLResponse(h)
