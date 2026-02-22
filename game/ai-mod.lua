@@ -228,6 +228,7 @@ function AI.get_game_state()
 
     -- Deck stats: total cards, enhanced count by type
     state.deck_size = G.GAME.starting_params and G.GAME.starting_params.deck_size or 52
+    state.current_deck_size = G.playing_cards and #G.playing_cards or state.deck_size
     if G.deck and G.deck.cards then
         state.deck_remaining = #G.deck.cards
     end

@@ -389,6 +389,7 @@ class GameContext:
     boss_blind: str = ""  # Boss blind name (e.g. "The Plant", "The Head")
     draw_pile: list = field(default_factory=list)  # Cards in draw pile (for search)
     build_planner: Optional[BuildPlanner] = None  # Build path planner
+    game_state: dict = field(default_factory=dict)  # Raw game state for scoring engine
 
     @property
     def chips_needed(self) -> float:
@@ -459,6 +460,7 @@ class GameContext:
             shop_items=shop,
             blind_info=state.get("blind_info", {}),
             boss_blind=state.get("boss_blind", ""),
+            game_state=state,
         )
 
 
@@ -503,7 +505,7 @@ def should_discard(ctx: GameContext) -> tuple[bool, list[int], str]:
     elif boss_name == "The Amber":
         debuffed_suits.add("Diamonds")
 
-    best_hands = find_best_hands(ctx.hand_cards, ctx.jokers, ctx.hand_levels, top_n=1, boss_blind=boss_name)
+    best_hands = find_best_hands(ctx.hand_cards, ctx.jokers, ctx.hand_levels, top_n=1, boss_blind=boss_name, game_state=ctx.game_state)
     if not best_hands:
         return (False, [], "Cannot evaluate hand")
 
@@ -644,7 +646,7 @@ def choose_play(ctx: GameContext) -> tuple[list[int], str]:
         return ([], "No cards")
 
     boss_blind = ctx.blind_info.get("boss_name", "")
-    best_hands = find_best_hands(ctx.hand_cards, ctx.jokers, ctx.hand_levels, top_n=3, boss_blind=boss_blind)
+    best_hands = find_best_hands(ctx.hand_cards, ctx.jokers, ctx.hand_levels, top_n=3, boss_blind=boss_blind, game_state=ctx.game_state)
     if not best_hands:
         return (list(range(min(5, len(ctx.hand_cards)))), "Fallback: play first 5")
 
@@ -736,10 +738,10 @@ def _estimate_joker_value(joker_name: str, edition: str, ctx: GameContext) -> fl
     new_jokers = ctx.jokers + [new_joker]
 
     for hand in sample_hands:
-        current = find_best_hands(hand, ctx.jokers, ctx.hand_levels, max_size=5, top_n=1)
+        current = find_best_hands(hand, ctx.jokers, ctx.hand_levels, max_size=5, top_n=1, game_state=ctx.game_state)
         current_best = current[0].final_score if current else 100
 
-        new = find_best_hands(hand, new_jokers, ctx.hand_levels, max_size=5, top_n=1)
+        new = find_best_hands(hand, new_jokers, ctx.hand_levels, max_size=5, top_n=1, game_state=ctx.game_state)
         new_best = new[0].final_score if new else 100
 
         if current_best > 0:
