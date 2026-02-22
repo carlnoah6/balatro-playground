@@ -64,11 +64,24 @@ class JokerCard:
     perishable: bool = False
     rental: bool = False
     sell_value: int = 0
-    extra: dict = field(default_factory=dict)  # joker-specific mutable state
+    extra: dict | int | float | None = field(default_factory=dict)  # joker-specific mutable state
+    # Runtime ability fields from Lua card.ability.*
+    mult: float = 0
+    t_mult: float = 0
+    t_chips: float = 0
+    x_mult: float = 0
 
     def __post_init__(self):
         if not self.name:
             self.name = self.key.replace("j_", "").replace("_", " ").title()
+
+    def get_extra(self, key: str, default=0):
+        """Get a value from extra dict, or return extra if it's a number."""
+        if isinstance(self.extra, dict):
+            return self.extra.get(key, default)
+        if isinstance(self.extra, (int, float)) and key == "value":
+            return self.extra
+        return default
 
 
 @dataclass

@@ -95,9 +95,11 @@ def apply_joker_scoring(
             if n_played <= 3:
                 mult += 20
         elif key == "j_banner":
-            mult += extra.get("discards_left", 0) * 2  # needs state
+            d_left = joker.get_extra("discards_left", 0)
+            mult += d_left * 2  # needs state
         elif key == "j_mystic_summit":
-            if extra.get("discards_left", 0) == 0:
+            d_left = joker.get_extra("d_remaining", 0) if isinstance(extra, dict) else (joker.get_extra("discards_left", 0))
+            if d_left == 0:
                 mult += 15
         elif key == "j_scholar":
             # +20 chips, +4 mult per Ace played
@@ -128,33 +130,129 @@ def apply_joker_scoring(
             if face_count > 0:
                 mult *= 2  # x2 if hand contains face card (first face card)
 
-        # ---- Scaling jokers (use extra state) ----
+        # ---- Scaling jokers (use runtime state from game) ----
         elif key == "j_supernova":
-            mult += extra.get("times_played", 0)
+            # Lua: mult_mod = G.GAME.hands[scoring_name].played
+            # extra is plain int (times played), or use joker.mult
+            if isinstance(extra, (int, float)) and extra > 0:
+                mult += extra
+            elif joker.mult > 0:
+                mult += joker.mult
         elif key == "j_ride_the_bus":
-            mult += extra.get("consecutive_no_face", 0)
+            # Lua: mult_mod = self.ability.mult (cumulative)
+            val = joker.mult
+            if val > 0:
+                mult += val
         elif key == "j_green_joker":
-            mult += extra.get("mult_bonus", 0)
+            # Lua: mult_mod = self.ability.mult (cumulative, +hand_add per hand, -discard_sub per discard)
+            val = joker.mult
+            if val > 0:
+                mult += val
         elif key == "j_red_card":
-            mult += extra.get("mult_bonus", 0)
+            # Lua: mult_mod = self.ability.mult (cumulative, +extra per skip)
+            val = joker.mult
+            if val > 0:
+                mult += val
         elif key == "j_blue_joker":
-            chips += extra.get("remaining_deck", 0) * 2
+            # Lua: chip_mod = self.ability.extra * #G.deck.cards
+            # extra is plain int (chips per remaining card, usually 2)
+            extra_val = extra if isinstance(extra, (int, float)) else 2
+            remaining = joker.get_extra("remaining_deck", 0) if isinstance(extra, dict) else 0
+            # If we have game_state with deck_remaining, use it
+            if remaining > 0:
+                chips += int(extra_val * remaining)
+            else:
+                # Fallback: assume ~30 cards remaining
+                chips += 60
         elif key == "j_runner":
-            chips += extra.get("chip_bonus", 0)
+            # Lua: chip_mod = self.ability.extra.chips (cumulative, +chip_mod per Straight)
+            val = joker.get_extra("chips", 0)
+            if val > 0:
+                chips += val
         elif key == "j_ice_cream":
-            chips += extra.get("chip_bonus", 100)
+            # Lua: chip_mod = self.ability.extra.chips (starts 100, -chip_mod per hand)
+            val = joker.get_extra("chips", 100)
+            if val > 0:
+                chips += val
         elif key == "j_square":
-            chips += extra.get("chip_bonus", 0)
+            # Lua: chip_mod = self.ability.extra.chips (cumulative, +chip_mod per 4-card hand)
+            val = joker.get_extra("chips", 0)
+            if val > 0:
+                chips += val
         elif key == "j_popcorn":
-            mult += extra.get("mult_bonus", 20)
+            # Lua: mult_mod = self.ability.mult (starts 20, -extra per round)
+            val = joker.mult
+            if val > 0:
+                mult += val
         elif key == "j_castle":
-            chips += extra.get("chip_bonus", 0)
+            # Lua: chip_mod = self.ability.extra.chips (cumulative)
+            val = joker.get_extra("chips", 0) if isinstance(extra, dict) else (joker.t_chips if joker.t_chips > 0 else 0)
+            if val > 0:
+                chips += val
         elif key == "j_wee":
-            chips += extra.get("chip_bonus", 0)
+            # Lua: chip_mod = self.ability.extra.chips (cumulative, +chip_mod per 2 scored)
+            val = joker.get_extra("chips", 0) if isinstance(extra, dict) else (joker.t_chips if joker.t_chips > 0 else 0)
+            if val > 0:
+                chips += val
         elif key == "j_hiker":
-            # Hiker adds permanent +5 chips to each played card
-            # In sim, we track via extra
-            chips += extra.get("chip_bonus", 0)
+            # Hiker: per-card trigger adds +5 permanent chips to each scored card
+            # In independent phase, no direct effect (per-card is handled separately)
+            pass
+
+        # ---- Newly implemented jokers ----
+        elif key == "j_trousers":
+            # Spare Trousers: Lua mult_mod = self.ability.mult (cumulative, +extra per Two Pair)
+            val = joker.mult
+            if val > 0:
+                mult += val
+        elif key == "j_flash":
+            # Flash Card: Lua mult_mod = self.ability.mult (cumulative, +extra per reroll)
+            val = joker.mult
+            if val > 0:
+                mult += val
+        elif key == "j_raised_fist":
+            # Raised Fist: +2x mult of lowest-rank held card
+            # This is a held-in-hand trigger, not independent. Skip here.
+            pass
+        elif key == "j_misprint":
+            # Misprint: random mult between min and max (extra.min, extra.max)
+            # Use expected value for deterministic scoring
+            min_val = joker.get_extra("min", 0) if isinstance(extra, dict) else 0
+            max_val = joker.get_extra("max", 23) if isinstance(extra, dict) else 23
+            mult += (min_val + max_val) / 2  # EV = 11.5
+        elif key == "j_loyalty_card":
+            # Loyalty Card: xMult every N hands (extra.every, extra.remaining)
+            # extra.Xmult is the multiplier, extra.remaining tracks countdown
+            x = joker.get_extra("Xmult", 4) if isinstance(extra, dict) else 4
+            remaining = joker.get_extra("remaining", "")
+            # Triggers when remaining shows "0 remaining" or similar
+            if remaining and "0 remaining" in str(remaining):
+                mult *= x
+        elif key == "j_gros_michel":
+            # Gros Michel: +15 mult (extra.mult)
+            val = joker.get_extra("mult", 15) if isinstance(extra, dict) else 15
+            if val > 0:
+                mult += val
+        elif key == "j_abstract":
+            # Abstract Joker: +3 mult per joker owned
+            joker_count = len(jokers)
+            mult += 3 * joker_count
+        elif key == "j_erosion":
+            # Erosion: +extra per card below starting deck size
+            extra_per = joker.get_extra("value", 4) if isinstance(extra, dict) else (extra if isinstance(extra, (int, float)) else 4)
+            # Need game_state for deck sizes — skip if not available
+            pass
+        elif key == "j_stone":
+            # Stone Joker: +25 chips per Stone Card in full deck
+            pass  # Needs deck info
+        elif key == "j_stuntman":
+            # Stuntman: +250 chips
+            chips += 250
+        elif key == "j_bootstraps":
+            # Bootstraps: +2 mult per $5 (extra.mult per extra.dollars)
+            m = joker.get_extra("mult", 2) if isinstance(extra, dict) else 2
+            # Need dollars info — skip
+            pass
 
         # ---- xMult jokers ----
         elif key == "j_duo":
@@ -175,30 +273,46 @@ def apply_joker_scoring(
         elif key == "j_cavendish":
             mult *= 3
         elif key == "j_card_sharp":
-            mult *= extra.get("x_mult", 1.0)
+            # Lua: Xmult_mod = self.ability.extra.Xmult (grows per hand played this round)
+            x = joker.get_extra("Xmult", 0) if isinstance(extra, dict) else 0
+            if x <= 0:
+                x = joker.x_mult if joker.x_mult > 1 else 1.0
+            if x > 1:
+                mult *= x
         elif key == "j_blackboard":
             # x3 if all held cards are Spades or Clubs
             if held_cards and all(c.suit in (Suit.SPADES, Suit.CLUBS) for c in held_cards):
                 mult *= 3
         elif key == "j_vampire":
-            mult *= extra.get("x_mult", 1.0)
+            # Lua: Xmult_mod = self.ability.x_mult (grows by absorbing enhancements)
+            x = joker.x_mult if joker.x_mult > 1 else joker.get_extra("x_mult", 1.0)
+            if x > 1:
+                mult *= x
         elif key == "j_obelisk":
-            mult *= extra.get("x_mult", 1.0)
+            x = joker.x_mult if joker.x_mult > 1 else joker.get_extra("x_mult", 1.0)
+            if x > 1:
+                mult *= x
         elif key == "j_hologram":
-            mult *= extra.get("x_mult", 1.0)
+            x = joker.x_mult if joker.x_mult > 1 else joker.get_extra("x_mult", 1.0)
+            if x > 1:
+                mult *= x
         elif key == "j_lucky_cat":
-            mult *= extra.get("x_mult", 1.0)
+            x = joker.x_mult if joker.x_mult > 1 else joker.get_extra("x_mult", 1.0)
+            if x > 1:
+                mult *= x
         elif key == "j_campfire":
-            mult *= extra.get("x_mult", 1.0)
+            x = joker.x_mult if joker.x_mult > 1 else joker.get_extra("x_mult", 1.0)
+            if x > 1:
+                mult *= x
         elif key == "j_acrobat":
-            if extra.get("is_last_hand", False):
+            if joker.get_extra("is_last_hand", False):
                 mult *= 3
         elif key == "j_steel_joker":
             steel_count = sum(1 for c in held_cards if c.enhancement == Enhancement.STEEL)
             if steel_count > 0:
                 mult *= (1 + 0.2 * steel_count)
         elif key == "j_glass":
-            glass_count = extra.get("glass_destroyed", 0)
+            glass_count = joker.get_extra("glass_destroyed", 0)
             if glass_count > 0:
                 mult *= (1 + 0.75 * glass_count)
         elif key == "j_baron":
@@ -230,12 +344,11 @@ def apply_joker_scoring(
                       "j_superposition", "j_space", "j_hallucination",
                       "j_fortune_teller", "j_todo_list", "j_mail",
                       "j_reserved_parking", "j_business", "j_gift",
-                      "j_turtle_bean", "j_erosion", "j_flash",
-                      "j_swashbuckler", "j_bootstraps", "j_misprint",
-                      "j_abstract", "j_raised_fist", "j_stone",
-                      "j_stuntman", "j_dna", "j_perkeo",
+                      "j_turtle_bean",
+                      "j_swashbuckler",
+                      "j_dna", "j_perkeo",
                       "j_canio", "j_triboulet", "j_yorick", "j_chicot",
-                      "j_gros_michel", "j_loyalty_card", "j_idol",
+                      "j_idol",
                       "j_seeing_double", "j_hit_the_road",
                       "j_shoot_the_moon", "j_flower_pot",
                       "j_oops", "j_throwback", "j_arrowhead",
