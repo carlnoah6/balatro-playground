@@ -182,6 +182,7 @@ class HandLevel:
     """Tracks planet card upgrades for each hand type."""
     levels: dict[str, int] = field(default_factory=lambda: {k: 1 for k in HAND_BASE})
     _game_base: dict[str, tuple[int, int]] = field(default_factory=dict)
+    played_counts: dict[str, int] = field(default_factory=dict)
 
     def get_base(self, hand_type: str) -> tuple[int, int]:
         """Return (chips, mult) for a hand type at its current level."""
@@ -204,6 +205,9 @@ class HandLevel:
                 mult = data.get("mult", 0)
                 if chips > 0 or mult > 0:
                     hl._game_base[name] = (chips, mult)
+                played = data.get("played", 0)
+                if played > 0:
+                    hl.played_counts[name] = played
         return hl
 
 
@@ -405,11 +409,13 @@ class _ScoringContext:
                  'played_cards', 'scoring_idxs', 'held_cards', 'jokers',
                  'pareidolia', 'has_smeared', 'chance_multiplier',
                  'resolved_jokers', 'joker_extra_state',
-                 '_report_add_chips', '_report_add_mult', '_report_x_mult')
+                 '_report_add_chips', '_report_add_mult', '_report_x_mult',
+                 'hand_levels')
 
     def __init__(self, base_chips: int, base_mult: int, hand_type: str,
                  played_cards: list[Card], scoring_idxs: list[int],
-                 held_cards: list[Card] | None, jokers: list[Joker]):
+                 held_cards: list[Card] | None, jokers: list[Joker],
+                 hand_levels: HandLevel | None = None):
         self.chips = base_chips
         self.mult = float(base_mult)
         self.hand_type = hand_type
@@ -418,6 +424,7 @@ class _ScoringContext:
         self.scoring_idxs = scoring_idxs
         self.held_cards = held_cards or []
         self.jokers = jokers
+        self.hand_levels = hand_levels or HandLevel()
         self.pareidolia = any(j.name == "Pareidolia" for j in jokers)
         self.has_smeared = any(j.name == "Smeared Joker" for j in jokers)
         # Oops! All 6s: doubles all probability-based effects
@@ -727,30 +734,35 @@ def _trigger_joker_independent(ctx: _ScoringContext, joker: Joker):
         # If val == 0, condition not met (has discards remaining), no effect
 
     elif name == "Green Joker":
-        # EFHIII: bigAdd(1 + joker[VALUE], this.mult) — VALUE = accumulated count
-        val = joker.get_extra("value", 0) or joker.mult
-        ctx.add_mult(max(1 + val, 1))
+        # Balatro source: mult_mod = self.ability.mult (cumulative, +1 per hand, -1 per discard)
+        val = joker.mult
+        if val and val > 0:
+            ctx.add_mult(val)
 
     elif name == "Red Card":
-        # EFHIII: bigAdd(joker[VALUE] * 3, this.mult) — VALUE = boosters skipped
-        val = joker.get_extra("value", 0) or joker.mult
-        ctx.add_mult(val * 3)
+        # Balatro source: mult_mod = self.ability.mult (cumulative, +extra per booster skipped)
+        val = joker.mult
+        if val and val > 0:
+            ctx.add_mult(val)
 
     elif name == "Supernova":
-        # EFHIII: bigAdd(this.hands[typeOfHand][PLAYED] + 1, this.mult)
-        # We don't have hands-played count, use runtime value
-        val = joker.get_extra("value", 0) or joker.mult
-        ctx.add_mult(max(val, 1))
+        # Balatro source: mult_mod = G.GAME.hands[scoring_name].played
+        # Number of times this hand type has been played this run
+        played_count = ctx.hand_levels.played_counts.get(ctx.hand_type, 0)
+        if played_count > 0:
+            ctx.add_mult(played_count)
 
     elif name == "Ride the Bus":
-        # EFHIII: bigAdd(this.compiledValues[j], this.mult) — accumulated consecutive count
-        val = joker.get_extra("value", 0) or joker.mult
-        ctx.add_mult(val)
+        # Balatro source: mult_mod = self.ability.mult (cumulative, resets on face card)
+        val = joker.mult
+        if val and val > 0:
+            ctx.add_mult(val)
 
     elif name == "Swashbuckler":
-        # EFHIII: bigAdd(this.compiledValues[j], this.mult) — sum of sell values
-        val = joker.get_extra("value", 0) or joker.mult
-        if val:
+        # Balatro source: mult_mod = self.ability.mult (cumulative, = sum of sell values of other jokers)
+        val = joker.mult
+        if val and val > 0:
+            ctx.add_mult(val)
             ctx.add_mult(val)
         else:
             total_sell = sum(j.sell_value for j in all_jokers if j.name != "Swashbuckler")
@@ -862,22 +874,23 @@ def _trigger_joker_independent(ctx: _ScoringContext, joker: Joker):
         ctx.add_mult(val)
 
     elif name == "Spare Trousers":
-        # EFHIII: if hasTwoPair: bigAdd(2 + joker[VALUE]*2, mult), else: bigAdd(joker[VALUE]*2, mult)
-        val = joker.get_extra("value", 0) or joker.t_mult
-        if "Two Pair" in contains:
-            ctx.add_mult(2 + val * 2)
-        else:
-            ctx.add_mult(val * 2)
+        # Balatro source: mult_mod = self.ability.mult (cumulative, +extra per Two Pair/Full House)
+        # Lua exports ability.mult as joker.mult
+        val = joker.mult
+        if val and val > 0:
+            ctx.add_mult(val)
 
     elif name == "Flash Card":
-        # EFHIII: bigAdd(joker[VALUE] * 2, this.mult) — VALUE = rerolls used
-        val = joker.get_extra("value", 0) or joker.mult
-        ctx.add_mult(val * 2)
+        # Balatro source: mult_mod = self.ability.mult (cumulative, +extra per reroll)
+        val = joker.mult
+        if val and val > 0:
+            ctx.add_mult(val)
 
     elif name == "Ceremonial Dagger":
-        # EFHIII: bigAdd(joker[VALUE], this.mult) — VALUE = accumulated mult from boss kills
-        val = joker.get_extra("value", 0) or joker.mult
-        ctx.add_mult(val)
+        # Balatro source: mult_mod = self.ability.mult (cumulative, +mult per boss defeated)
+        val = joker.mult
+        if val and val > 0:
+            ctx.add_mult(val)
 
     elif name == "Erosion":
         # EFHIII: bigAdd(joker[VALUE] * 4, this.mult) — VALUE = cards below 52
@@ -897,14 +910,10 @@ def _trigger_joker_independent(ctx: _ScoringContext, joker: Joker):
         ctx.x_mult(3.0)
 
     elif name == "Popcorn":
-        # EFHIII: bigAdd(20 - joker[VALUE] * 4, this.mult) — VALUE = rounds elapsed
-        val = joker.get_extra("value", 0) or joker.mult
-        if isinstance(val, (int, float)) and val > 4:
-            # val is already the current mult value (20 - rounds*4)
-            ctx.add_mult(max(val, 0))
-        else:
-            # val is rounds elapsed
-            ctx.add_mult(max(20 - int(val) * 4, 0))
+        # Balatro source: mult_mod = self.ability.mult (starts at 20, -5 per round played)
+        val = joker.mult
+        if val and val > 0:
+            ctx.add_mult(val)
 
     elif name == "Ice Cream":
         # EFHIII: this.chips += 100 - joker[VALUE] * 5 — VALUE = hands played
@@ -1178,6 +1187,7 @@ def calculate_score(
         scoring_idxs=scoring_idxs,
         held_cards=held_cards,
         jokers=jokers,
+        hand_levels=hand_levels,
     )
 
     # DNA: if exactly 1 card played, add a copy to held cards
