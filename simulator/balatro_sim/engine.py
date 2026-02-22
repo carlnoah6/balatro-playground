@@ -9,7 +9,7 @@ from __future__ import annotations
 from itertools import combinations
 from typing import Optional
 
-from .enums import Phase, HandType, BLIND_BASE_CHIPS
+from .enums import Phase, HandType, Enhancement, BLIND_BASE_CHIPS
 from .cards import Card, Deck
 from .rng import RNGState
 from .state import GameState
@@ -26,7 +26,7 @@ from .actions import (
 )
 from .shop import (
     ShopState, ShopJoker, ShopConsumable, ShopVoucher, ShopPack,
-    generate_shop, reroll_shop,
+    ShopConfig, generate_shop, reroll_shop,
 )
 
 
@@ -212,6 +212,18 @@ class GameEngine:
             j.extra["remaining_deck"] = len(s.draw_pile)
             j.extra["is_last_hand"] = (s.hands_left == 1)
 
+        # Build game_state dict for scoring context
+        _game_state = {
+            "discards_left": s.discards_left,
+            "remaining_deck": len(s.draw_pile),
+            "dollars": s.dollars,
+            "hands_played_counts": {},  # TODO: track per-hand-type play counts
+            "stone_cards_in_deck": sum(1 for c in s.full_deck if c.enhancement == Enhancement.STONE),
+            "steel_cards_in_deck": sum(1 for c in s.full_deck if c.enhancement == Enhancement.STEEL),
+            "glass_cards_in_deck": sum(1 for c in s.full_deck if c.enhancement == Enhancement.GLASS),
+            "deck_size": len(s.full_deck),
+        }
+
         # Score — boss may modify base chips/mult
         result = calculate_score(
             played_cards=played,
@@ -220,6 +232,7 @@ class GameEngine:
             hand_levels=s.hand_levels,
             held_cards=held,
             jokers=s.jokers,
+            game_state=_game_state,
         )
 
         # Boss: Flint halves the final score
@@ -542,16 +555,79 @@ class GameEngine:
 
     # --- Shop Generation ---
 
+    def _build_shop_config(self, s: GameState) -> ShopConfig:
+        """Build ShopConfig from current game state."""
+        used_jokers = {j.key: True for j in s.jokers}
+        used_vouchers = {v: True for v in s.vouchers}
+        has_showman = any(j.key == "j_ring_master" for j in s.jokers)
+
+        # Voucher effects on rates
+        joker_max = 2
+        if used_vouchers.get("v_overstock_plus"):
+            joker_max = 4
+        elif used_vouchers.get("v_overstock_norm"):
+            joker_max = 3
+
+        edition_rate = 1.0
+        if used_vouchers.get("v_glow_up"):
+            edition_rate = 4.0
+        elif used_vouchers.get("v_hone"):
+            edition_rate = 2.0
+
+        spectral_rate = 0.0
+        if used_vouchers.get("v_omen_globe"):
+            spectral_rate = 4.0
+        elif used_vouchers.get("v_crystal_ball"):
+            spectral_rate = 2.0
+
+        tarot_rate = 4.0
+        if used_vouchers.get("v_tarot_tycoon"):
+            tarot_rate = 8.0
+        elif used_vouchers.get("v_tarot_merchant"):
+            tarot_rate = 6.0
+
+        planet_rate = 4.0
+        if used_vouchers.get("v_planet_tycoon"):
+            planet_rate = 8.0
+        elif used_vouchers.get("v_planet_merchant"):
+            planet_rate = 6.0
+
+        # Ghost Deck: spectral_rate = 2
+        if s.deck_type == "Ghost Deck":
+            spectral_rate = max(spectral_rate, 2.0)
+
+        # Stake modifiers for eternal/perishable/rental
+        enable_eternals = s.stake >= 3
+        enable_perishables = s.stake >= 5
+        enable_rentals = s.stake >= 7
+
+        return ShopConfig(
+            joker_rate=20.0,
+            tarot_rate=tarot_rate,
+            planet_rate=planet_rate,
+            spectral_rate=spectral_rate,
+            edition_rate=edition_rate,
+            joker_max=joker_max,
+            enable_eternals_in_shop=enable_eternals,
+            enable_perishables_in_shop=enable_perishables,
+            enable_rentals_in_shop=enable_rentals,
+            has_illusion=bool(used_vouchers.get("v_illusion")),
+            first_shop_buffoon=getattr(s, '_first_shop_buffoon', False),
+            used_jokers=used_jokers,
+            used_vouchers=used_vouchers,
+            has_showman=has_showman,
+        )
+
     def _generate_shop(self, s: GameState) -> list[dict]:
         """Generate shop using the full shop.py system.
 
         Returns legacy dict list for shop_items (backward compat),
         but also sets s._shop_state for the real ShopState.
         """
-        owned_keys = {j.key for j in s.jokers}
-        owned_vouchers = set(s.vouchers)
-        shop_state = generate_shop(s.rng, s.ante, owned_keys, owned_vouchers)
+        config = self._build_shop_config(s)
+        shop_state = generate_shop(s.rng, config, s.ante)
         s._shop_state = shop_state
+        s._shop_config = config
         s.reroll_cost = shop_state.reroll_cost
         s.free_rerolls = shop_state.free_rerolls
 
@@ -694,9 +770,9 @@ class GameEngine:
     def _reroll_shop(self, s: GameState) -> GameState:
         """Reroll shop items using real shop system."""
         shop = getattr(s, '_shop_state', None)
-        if shop and s.rng:
-            owned_keys = {j.key for j in s.jokers}
-            new_shop, cost = reroll_shop(s.rng, shop, s.ante, owned_keys, s.dollars)
+        config = getattr(s, '_shop_config', None)
+        if shop and config and s.rng:
+            new_shop, cost = reroll_shop(s.rng, shop, config, s.ante, s.dollars)
             s.dollars -= cost
             s._shop_state = new_shop
             s.shop_items = self._rebuild_shop_items(new_shop)
