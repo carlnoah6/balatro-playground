@@ -253,8 +253,9 @@ def add_game_log(run_id: int, seq: int, phase: str, ante: int, blind: str,
                  chips: int, target: int,
                  action: str, decision_type: str = None, reasoning: str = None,
                  hand_type: str = None, estimated_score: int = None, actual_score: int = None,
-                 boss_blind: str = None):
+                 boss_blind: str = None, joker_state: list = None):
     """Add a game log entry (one step in the text replay)."""
+    import json as _json
     conn = _get_conn()
     cur = conn.cursor()
     cur.execute("""
@@ -262,11 +263,11 @@ def add_game_log(run_id: int, seq: int, phase: str, ante: int, blind: str,
         (run_id, seq, phase, ante, blind, hand_cards, jokers, consumables,
          dollars, hands_left, discards_left, chips, target,
          action, decision_type, reasoning, hand_type, estimated_score, actual_score,
-         boss_blind)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+         boss_blind, joker_state)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """, (run_id, seq, phase, ante, blind, hand_cards, jokers, consumables,
           dollars, hands_left, discards_left, chips, target,
           action, decision_type, reasoning, hand_type, estimated_score, actual_score,
-          boss_blind))
+          boss_blind, _json.dumps(joker_state) if joker_state else None))
     conn.commit()
     conn.close()
