@@ -776,11 +776,12 @@ def _trigger_joker_independent(ctx: _ScoringContext, joker: Joker):
 
     # --- Flat chip jokers ---
     elif name == "Blue Joker":
-        # EFHIII: compiledChips += 104 + 2 * joker[VALUE]
-        # VALUE tracks deck size changes; game state extra = remaining cards in deck
-        val = joker.get_extra("value", 0) or joker.t_chips
-        if val:
-            ctx.add_chips(2 * val)
+        # Balatro source: chip_mod = self.ability.extra * #G.deck.cards
+        # extra = 2 (chips per remaining card in draw pile)
+        extra_val = joker.extra if isinstance(joker.extra, (int, float)) else 2
+        deck_remaining = ctx.game_state.get("deck_remaining", 0)
+        if deck_remaining > 0:
+            ctx.add_chips(int(extra_val * deck_remaining))
         else:
             # Fallback: assume ~30 cards remaining
             ctx.add_chips(60)
@@ -839,10 +840,16 @@ def _trigger_joker_independent(ctx: _ScoringContext, joker: Joker):
             ctx.x_mult(1.0 + empty)
 
     elif name == "Loyalty Card":
-        # EFHIII: x4 if joker[VALUE] === 0 (every 6th hand)
-        val = joker.get_extra("value", 0)
-        if val == 0:
-            ctx.x_mult(4.0)
+        # Balatro source: Xmult_mod = extra.Xmult every (extra.every+1) hands
+        # loyalty_remaining not exported from Lua — can't know exact trigger timing
+        # Use expected value: triggers 1/(every+1) of the time → avg xMult contribution
+        every = joker.get_extra("every", 5)
+        x_val = joker.get_extra("Xmult", 4.0)
+        # Expected xMult = (1 * (every) + x_val * 1) / (every + 1)
+        # = (every + x_val) / (every + 1)
+        expected_x = (every + x_val) / (every + 1)
+        if expected_x > 1.0:
+            ctx.x_mult(expected_x)
 
     elif name == "Acrobat":
         # EFHIII: x3 if joker[VALUE] !== 0 (last hand of round)
@@ -1014,10 +1021,10 @@ def _trigger_joker_independent(ctx: _ScoringContext, joker: Joker):
             ctx.x_mult(x)
 
     elif name == "Vampire":
-        # xMult that grows from consuming enhancements
-        val = joker.get_extra("value", 0) or joker.x_mult
-        x = 1.0 + val * 0.1 if isinstance(val, (int, float)) and val < 20 else val
-        if x and x > 1.0:
+        # Balatro source: Xmult_mod = self.ability.x_mult (cumulative, grows by extra per enhanced card)
+        # Lua exports ability.x_mult as joker.x_mult
+        x = joker.x_mult if joker.x_mult > 1.0 else 1.0
+        if x > 1.0:
             ctx.x_mult(x)
 
     elif name == "Obelisk":
