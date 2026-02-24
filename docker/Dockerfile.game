@@ -1,0 +1,67 @@
+# Balatro AI Bot - Docker Environment
+# LÖVE 11.5 + Xvfb + lovely-injector + scrot
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Core dependencies: Xvfb (virtual display), LÖVE, lua-socket, scrot (screenshots)
+# love package has a broken post-install script (man page path), so we force-install
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    xvfb \
+    lua5.1 \
+    lua-socket \
+    scrot \
+    curl \
+    jq \
+    unzip \
+    ca-certificates \
+    libgl1 \
+    libegl1 \
+    libgles2 \
+    libopenal1 \
+    && apt-get install -y --no-install-recommends love || true \
+    && dpkg --configure -a || true \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get update && apt-get install -y --no-install-recommends python3 python3-requests \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install lovely-injector (LD_PRELOAD mod loader for LÖVE)
+RUN curl -fsSL https://github.com/ethangreen-dev/lovely-injector/releases/download/v0.9.0/lovely-x86_64-unknown-linux-gnu.tar.gz \
+    | tar xz -C /usr/local/lib \
+    && chmod 644 /usr/local/lib/liblovely.so
+
+# Create directory structure
+RUN mkdir -p /opt/balatro-game \
+             /opt/balatro-ai \
+             /opt/screenshots \
+             /tmp/.X11-unix \
+             /root/.local/share/love/Mods \
+             /root/.local/share/love-11/Mods
+
+# Copy AI mod (TCP 12345 interface)
+COPY ai-mod.lua /opt/balatro-ai/ai-mod.lua
+
+# Copy lovely patch for AI mod injection (love-11 is the actual dir lovely uses)
+COPY mods/ai-mod /root/.local/share/love/Mods/ai-mod
+COPY mods/ai-mod /root/.local/share/love-11/Mods/ai-mod
+
+# Copy AI agent
+COPY ai-agent.py /opt/balatro-ai/ai-agent.py
+RUN chmod +x /opt/balatro-ai/ai-agent.py
+
+# Screenshot directory
+RUN mkdir -p /opt/balatro-screenshots
+
+# Copy startup script
+COPY start-game.sh /opt/start-game.sh
+RUN chmod +x /opt/start-game.sh
+
+# Xvfb display
+ENV DISPLAY=:99
+
+# Expose AI mod TCP port
+EXPOSE 12345
+
+WORKDIR /opt/balatro-game
+
+CMD ["/opt/start-game.sh"]

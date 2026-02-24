@@ -1,0 +1,28 @@
+services:
+  balatro:
+    build: .
+    container_name: balatro-dev
+    volumes:
+      # Mount game files (extracted Balatro .love contents)
+      - ./game:/opt/balatro-game:ro
+      # Screenshots output
+      - ./screenshots:/opt/balatro-screenshots
+      # Mount agent for live editing
+      - ./ai-agent.py:/opt/balatro-ai/ai-agent.py:ro
+    ports:
+      - "127.0.0.1:12345:12345"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DISPLAY=:99
+      - SCREENSHOT_DIR=/opt/balatro-screenshots
+      - LLM_BASE_URL=http://host.docker.internal:8180/v1
+      - LLM_API_KEY=sk-admin-luna2026
+      - LLM_MODEL=kimi-k2.5
+      - LARK_APP_ID=${LARK_APP_ID:-cli_a90c3a6163785ed2}
+      - LARK_APP_SECRET=${LARK_APP_SECRET:-}
+      - LARK_TIMELINE_CHAT=${LARK_TIMELINE_CHAT:-oc_7f3ebd31a5cf2fec9170952b29eb2700}
+      - USE_LLM=${USE_LLM:-1}
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
