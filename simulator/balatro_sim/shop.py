@@ -684,14 +684,31 @@ def _create_card(
          "eternal": bool, "perishable": bool, "rental": bool}
     """
     # Soul/Black Hole check (before pool)
+    # Use node-based RNG matching Immolate: random(inst, {N_Type, N_Type, N_Ante}, {R_Soul, R_<CardType>, ante}, 3)
+    from .rng import RType, NType, build_node_key
+    
     if not forced_key and soulable and "c_soul" not in config.banned_keys:
         if card_type in ("Tarot", "Spectral", "Tarot_Planet"):
             if not (config.used_jokers.get("c_soul") and not config.has_showman):
-                if rng.pseudorandom(f"soul_{card_type}{ante}") > 0.997:
+                # Tarot: {R_Soul, R_Tarot, ante}
+                soul_rtype = RType.Tarot if card_type == "Tarot" else RType.Spectral
+                soul_key = build_node_key(
+                    (NType.Type, RType.Soul),
+                    (NType.Type, soul_rtype),
+                    (NType.Ante, ante)
+                )
+                if rng.raw_random(soul_key) > 0.997:
                     forced_key = "c_soul"
         if card_type in ("Planet", "Spectral"):
             if not (config.used_jokers.get("c_black_hole") and not config.has_showman):
-                if rng.pseudorandom(f"soul_{card_type}{ante}") > 0.997:
+                # Planet/Spectral: {R_Soul, R_Planet/R_Spectral, ante}
+                bh_rtype = RType.Planet if card_type == "Planet" else RType.Spectral
+                bh_key = build_node_key(
+                    (NType.Type, RType.Soul),
+                    (NType.Type, bh_rtype),
+                    (NType.Ante, ante)
+                )
+                if rng.raw_random(bh_key) > 0.997:
                     forced_key = "c_black_hole"
 
     if forced_key and forced_key not in config.banned_keys:
@@ -768,9 +785,16 @@ def _create_card(
                 if rng.pseudorandom(f"{rental_key}{ante}") > 0.7:
                     rental = True
 
+        # Joker edition: use node-based RNG
+        # Immolate: random(inst, {N_Type, N_Source, N_Ante}, {R_Joker_Edition, itemSource, ante}, 3)
+        edition_key = build_node_key(
+            (NType.Type, RType.JokerEdition),
+            (NType.Source, source),
+            (NType.Ante, ante)
+        )
         edition = poll_edition(
             rng,
-            f"edi{key_append}{ante}",
+            edition_key,
             edition_rate=config.edition_rate,
             no_neg=True,
         )
