@@ -165,17 +165,57 @@ def _resample_str(n: int) -> str:
     return f"_resample{n + 1}"
 
 
+# ---------------------------------------------------------------------------
+# Node types — mirrors Immolate's ntype enum (cache.cl:74-77)
+# ---------------------------------------------------------------------------
+
+class NType(IntEnum):
+    """Node parameter types — determines how each (ntype, value) pair
+    is converted to a string component of the node key."""
+    Type = 0      # N_Type → type_str(value)
+    Source = 1    # N_Source → source_str(value)
+    Ante = 2      # N_Ante → str(value)
+    Resample = 3  # N_Resample → resample_str(value)
+
+
+def _node_str(nt: NType, value: int) -> str:
+    """Convert a single (ntype, value) pair to its string component.
+    Mirrors Immolate's node_str() in cache.cl:180-185."""
+    if nt == NType.Type:
+        return _TYPE_STR.get(value, "")
+    elif nt == NType.Source:
+        return _SOURCE_STR.get(value, "")
+    elif nt == NType.Ante:
+        return str(value)
+    elif nt == NType.Resample:
+        return _resample_str(value)
+    return ""
+
+
+def build_node_key(*pairs: tuple[NType, int]) -> str:
+    """Build an Immolate-compatible node key from (ntype, value) pairs.
+
+    Each pair is converted via _node_str() and concatenated in order.
+    The seed is appended by RNGState.pseudoseed() when hashing.
+
+    This matches Immolate's get_node_child() which iterates:
+        phvalue = node_str(nts[0], ids[0])
+        for i in 1..num: phvalue += node_str(nts[i], ids[i])
+        phvalue += seed
+    """
+    return "".join(_node_str(nt, val) for nt, val in pairs)
+
+
+# Legacy convenience wrapper (deprecated — use build_node_key for precision)
 def node_key(
     rtype: RType,
     source: RSource | None = None,
     ante: int | None = None,
     resample: int = 0,
 ) -> str:
-    """Build an Immolate-compatible node key (without seed suffix).
-
-    Key = type_str [+ source_str] [+ ante_str] [+ resample_str]
-    The seed is appended by RNGState.pseudoseed() when hashing.
-    """
+    """Build node key with fixed order: type [+ source] [+ ante] [+ resample].
+    WARNING: This does NOT match all Immolate call sites. Use build_node_key()
+    for precise control over parameter order."""
     key = _TYPE_STR[rtype]
     if source is not None:
         key += _SOURCE_STR[source]
@@ -331,7 +371,7 @@ class RNGState:
         _pseed = round_digits(abs((2.134453429141 + _pseed * 1.72431234) % 1), 13)
         return (_pseed + pseudohash(predict_seed)) / 2
 
-    # -- High-level convenience methods using node_key --
+    # -- High-level convenience methods using node_key (legacy, fixed order) --
 
     def node_random(
         self,
@@ -340,7 +380,8 @@ class RNGState:
         ante: int | None = None,
         resample: int = 0,
     ) -> float:
-        """Get a random float in [0, 1) using Immolate node-key structure."""
+        """Get a random float using legacy node_key (fixed order).
+        WARNING: Use raw_random() with build_node_key() for precise control."""
         key = node_key(rtype, source, ante, resample)
         seed_val = self.pseudoseed(key)
         lr = lua_randomseed(seed_val)
@@ -356,7 +397,7 @@ class RNGState:
         min_val: int = 0,
         max_val: int = 1,
     ) -> int:
-        """Get a random int in [min_val, max_val] using Immolate node-key."""
+        """Get a random int using legacy node_key (fixed order)."""
         key = node_key(rtype, source, ante, resample)
         seed_val = self.pseudoseed(key)
         lr = lua_randomseed(seed_val)
@@ -370,13 +411,38 @@ class RNGState:
         ante: int | None = None,
         resample: int = 0,
     ):
-        """Pick a random element from a list using Immolate node-key."""
+        """Pick a random element using legacy node_key (fixed order)."""
         if not lst:
             raise ValueError("Cannot pick from empty list")
         key = node_key(rtype, source, ante, resample)
         seed_val = self.pseudoseed(key)
         lr = lua_randomseed(seed_val)
         idx = lr.randint(0, len(lst) - 1)
+        return lst[idx]
+
+    # -- Precise methods using build_node_key (matches Immolate exactly) --
+
+    def raw_random(self, key: str) -> float:
+        """Get random float using a pre-built node key string.
+        Use with build_node_key() for exact Immolate RNG reproduction."""
+        seed_val = self.pseudoseed(key)
+        lr = lua_randomseed(seed_val)
+        return lr.random()
+
+    def raw_randint(self, key: str, min_val: int, max_val: int) -> int:
+        """Get random int using a pre-built node key string."""
+        seed_val = self.pseudoseed(key)
+        lr = lua_randomseed(seed_val)
+        return lr.randint(min_val, max_val)
+
+    def raw_element(self, key: str, lst: list):
+        """Pick random element using a pre-built node key string.
+        Matches Immolate's randchoice: l_randint(1, len) then 0-indexed."""
+        if not lst:
+            raise ValueError("Cannot pick from empty list")
+        seed_val = self.pseudoseed(key)
+        lr = lua_randomseed(seed_val)
+        idx = lr.randint(1, len(lst)) - 1
         return lst[idx]
 
     # -- Legacy flat-key API (still used by some callers) --
