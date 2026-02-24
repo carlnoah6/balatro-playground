@@ -396,8 +396,9 @@ class GameEngine:
         s.discard_pile.clear()
         s.played_this_round = []
 
-        # Shuffle
-        shuffle_key = f"nr{s.ante}_{s.round_num}"
+        # Shuffle — Immolate key: "nr" + ante (no round_num)
+        from balatro_sim.rng import node_key, RType
+        shuffle_key = node_key(RType.ShuffleNewRound, ante=s.ante)
         if s.rng:
             s.draw_pile = s.rng.shuffle(shuffle_key, all_cards)
         else:

@@ -396,7 +396,8 @@ def select_boss_blind(
         pool = get_boss_pool(ante)
 
     if rng:
-        return rng.random_element(f"boss_ante_{ante}", pool)
+        from balatro_sim.rng import node_key, RType
+        return rng.random_element(node_key(RType.Boss), pool)
     else:
         import random
         return random.choice(pool)
@@ -447,7 +448,8 @@ _BASE_TAG_POOL = [
 def select_skip_tag(rng: Optional["RNGState"] = None, ante: int = 1) -> SkipTag:
     """Select a random skip tag."""
     if rng:
-        return rng.random_element(f"skip_tag_{ante}", _BASE_TAG_POOL)
+        from balatro_sim.rng import node_key, RType
+        return rng.random_element(node_key(RType.Tags, ante=ante), _BASE_TAG_POOL)
     else:
         import random
         return random.choice(_BASE_TAG_POOL)

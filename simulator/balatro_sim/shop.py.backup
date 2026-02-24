@@ -672,32 +672,15 @@ def _create_card(
             "rental": False,
         }
 
-    # Build pool and select using node-based RNG
-    from .rng import RType, RSource
-    
+    # Build pool and select
     pool, pool_key = _build_pool(card_type, None, config, ante, key_append, legendary)
-    
-    # Map card_type to RType
-    rtype_map = {
-        "Joker": RType.Joker1,
-        "Tarot": RType.Tarot,
-        "Planet": RType.Planet,
-        "Spectral": RType.Spectral,
-    }
-    rtype = rtype_map.get(card_type, RType.Joker1)
-    
-    # Determine source from area
-    source = RSource.Shop if "shop" in area else RSource.Buffoon
-    
-    center_key = rng.node_element(rtype, pool, source, ante, resample=0)
+    center_key = rng.random_element(pool_key, pool)
 
     # Resample if UNAVAILABLE
-    resample_num = 1
+    it = 1
     while center_key == "UNAVAILABLE":
-        center_key = rng.node_element(rtype, pool, source, ante, resample=resample_num)
-        resample_num += 1
-        if resample_num > 100:  # Safety
-            break
+        it += 1
+        center_key = rng.random_element(f"{pool_key}_resample{it}", pool)
 
     # Joker-specific: edition, eternal, perishable, rental
     edition = Edition.NONE
