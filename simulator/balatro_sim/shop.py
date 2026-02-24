@@ -107,14 +107,14 @@ _JOKER_RAW: list[tuple[str, str, int, int, int]] = [
     ("j_vampire", "Vampire", 2, 7, 68),
     ("j_shortcut", "Shortcut", 2, 7, 69),
     ("j_hologram", "Hologram", 2, 7, 70),
-    ("j_vagabond", "Vagabond", 2, 7, 71),
+    ("j_vagabond", "Vagabond", 3, 7, 71),
     ("j_baron", "Baron", 3, 8, 72),
     ("j_cloud_9", "Cloud 9", 2, 7, 73),
     ("j_rocket", "Rocket", 2, 6, 74),
-    ("j_obelisk", "Obelisk", 2, 7, 75),
+    ("j_obelisk", "Obelisk", 3, 7, 75),
     ("j_midas_mask", "Midas Mask", 2, 7, 76),
     ("j_luchador", "Luchador", 2, 5, 77),
-    ("j_photograph", "Photograph", 2, 5, 78),
+    ("j_photograph", "Photograph", 1, 5, 78),
     ("j_gift", "Gift Card", 2, 6, 79),
     ("j_turtle_bean", "Turtle Bean", 2, 6, 80),
     ("j_erosion", "Erosion", 2, 6, 81),
@@ -131,8 +131,8 @@ _JOKER_RAW: list[tuple[str, str, int, int, int]] = [
     ("j_baseball", "Baseball Card", 3, 8, 92),
     ("j_bull", "Bull", 2, 6, 93),
     ("j_diet_cola", "Diet Cola", 2, 6, 94),
-    ("j_trading", "Trading Card", 1, 5, 95),
-    ("j_flash", "Flash Card", 1, 4, 96),
+    ("j_trading", "Trading Card", 2, 5, 95),
+    ("j_flash", "Flash Card", 2, 4, 96),
     ("j_popcorn", "Popcorn", 1, 5, 97),
     ("j_trousers", "Spare Trousers", 2, 6, 98),
     ("j_ancient", "Ancient Joker", 3, 8, 99),
@@ -172,7 +172,7 @@ _JOKER_RAW: list[tuple[str, str, int, int, int]] = [
     ("j_family", "The Family", 3, 8, 133),
     ("j_order", "The Order", 3, 8, 134),
     ("j_tribe", "The Tribe", 3, 8, 135),
-    ("j_stuntman", "Stuntman", 2, 7, 136),
+    ("j_stuntman", "Stuntman", 3, 7, 136),
     ("j_invisible", "Invisible Joker", 3, 8, 137),
     ("j_brainstorm", "Brainstorm", 3, 10, 138),
     ("j_satellite", "Satellite", 2, 6, 139),
@@ -180,7 +180,7 @@ _JOKER_RAW: list[tuple[str, str, int, int, int]] = [
     ("j_drivers_license", "Driver's License", 3, 7, 141),
     ("j_cartomancer", "Cartomancer", 2, 6, 142),
     ("j_astronomer", "Astronomer", 2, 8, 143),
-    ("j_burnt", "Burnt Joker", 2, 5, 144),
+    ("j_burnt", "Burnt Joker", 3, 5, 144),
     ("j_bootstraps", "Bootstraps", 2, 7, 145),
     ("j_canio", "Canio", 4, 20, 146),
     ("j_triboulet", "Triboulet", 4, 20, 147),
@@ -654,12 +654,12 @@ def _select_joker_rarity(rng, ante: int, source) -> int:
     
     rate = rng.raw_random(rarity_key)
     
-    # Thresholds from Immolate functions.cl:184-240
+    # Thresholds from Immolate functions.cl:201-207
+    # Note: No Legendary from random! Legendary only from S_Soul source.
+    # No ante check either.
     if rate > 0.95:
-        return 4  # Legendary
-    elif rate > 0.7:
         return 3  # Rare
-    elif ante >= 2 and rate > 0:
+    elif rate > 0.7:
         return 2  # Uncommon
     else:
         return 1  # Common
@@ -797,17 +797,21 @@ def _create_card(
 
         # Joker edition: use node-based RNG
         # Immolate: random(inst, {N_Type, N_Source, N_Ante}, {R_Joker_Edition, itemSource, ante}, 3)
+        # Immolate thresholds: >0.997→Negative, >0.994→Polychrome, >0.98→Holo, >0.96→Foil
         edition_key = build_node_key(
             (NType.Type, RType.JokerEdition),
             (NType.Source, source),
             (NType.Ante, ante)
         )
-        edition = poll_edition(
-            rng,
-            edition_key,
-            edition_rate=config.edition_rate,
-            no_neg=True,
-        )
+        edition_poll = rng.raw_random(edition_key)
+        if edition_poll > 0.997:
+            edition = Edition.NEGATIVE
+        elif edition_poll > 0.994:
+            edition = Edition.POLYCHROME
+        elif edition_poll > 0.98:
+            edition = Edition.HOLOGRAPHIC
+        elif edition_poll > 0.96:
+            edition = Edition.FOIL
 
     return {
         "key": center_key,
@@ -876,7 +880,7 @@ def create_card_for_shop(
 
     card = _create_card(
         rng, selected_type, config, ante,
-        soulable=True, key_append="sho",
+        soulable=False, key_append="sho",
         area="shop_jokers",
     )
 
