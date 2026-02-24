@@ -924,19 +924,25 @@ def get_next_voucher_key(
     
     Matches Immolate's voucher generation: initial sample, then resample
     with N_Resample if locked/unavailable.
+    
+    Immolate source (functions.cl:527-532):
+      randchoice(inst, {N_Type, N_Ante}, {R_Voucher, ante}, 2, VOUCHERS)
+      resample: {N_Type, N_Ante, N_Resample}, {R_Voucher, ante, resampleNum}
     """
-    from .rng import RType, RSource
+    from .rng import RType, NType, build_node_key
     
     pool, pool_key = _build_pool("Voucher", None, config, ante)
     
-    # Initial sample: Voucher + Shop + ante
+    # Initial sample: Type + Ante (no source)
     rtype = RType.VoucherTag if from_tag else RType.Voucher
-    center = rng.node_element(rtype, pool, RSource.Shop, ante, resample=0)
+    key = build_node_key((NType.Type, rtype), (NType.Ante, ante))
+    center = rng.raw_element(key, pool)
     
-    # Resample if unavailable (locked)
+    # Resample if unavailable (locked): Type + Ante + Resample
     resample_num = 1
     while center == "UNAVAILABLE":
-        center = rng.node_element(rtype, pool, RSource.Shop, ante, resample=resample_num)
+        key = build_node_key((NType.Type, rtype), (NType.Ante, ante), (NType.Resample, resample_num))
+        center = rng.raw_element(key, pool)
         resample_num += 1
         # Safety: prevent infinite loop
         if resample_num > 100:
