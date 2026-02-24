@@ -221,6 +221,26 @@ for _j in _JOKER_RAW:
 for _r in JOKERS_BY_RARITY:
     JOKERS_BY_RARITY[_r].sort(key=lambda x: x[4])
 
+# Jokers with enhancement_gate — only available if player has that enhanced card in deck.
+# In a fresh game with no enhanced cards, these are UNAVAILABLE.
+ENHANCEMENT_GATE_JOKERS: dict[str, str] = {
+    "j_steel_joker": "m_steel",   # Steel Card
+    "j_stone": "m_stone",         # Stone Card
+    "j_lucky_cat": "m_lucky",     # Lucky Card
+    "j_ticket": "m_gold",         # Gold Card (also locked)
+    "j_glass": "m_glass",         # Glass Card (also locked)
+}
+
+# Jokers with pool flags — conditional availability.
+# no_pool_flag: excluded if flag IS set
+# yes_pool_flag: excluded if flag is NOT set
+JOKER_NO_POOL_FLAG: dict[str, str] = {
+    "j_gros_michel": "gros_michel_extinct",  # excluded after extinction
+}
+JOKER_YES_POOL_FLAG: dict[str, str] = {
+    "j_cavendish": "gros_michel_extinct",    # only available after Gros Michel extinct
+}
+
 
 # ---------------------------------------------------------------------------
 # Consumable catalogs — (key, name, cost, order)
@@ -504,6 +524,9 @@ class ShopConfig:
     # Played hand types — planets with softlock only appear if hand was played.
     # Default empty = softlocked planets excluded.
     played_hands: set = field(default_factory=set)
+    # Enhanced cards in deck — jokers with enhancement_gate need matching card.
+    # Default empty = enhancement_gate jokers excluded.
+    enhancement_cards: set = field(default_factory=set)
 
 
 # ---------------------------------------------------------------------------
@@ -563,6 +586,18 @@ def _build_pool(
             # Soul and Black Hole are never in normal pool
             if key in ("c_soul", "c_black_hole"):
                 add = False
+            # Enhancement gate: needs matching enhanced card in deck
+            if add and key in ENHANCEMENT_GATE_JOKERS:
+                gate = ENHANCEMENT_GATE_JOKERS[key]
+                if gate not in config.enhancement_cards:
+                    add = False
+            # Pool flags
+            if add and key in JOKER_NO_POOL_FLAG:
+                if config.pool_flags.get(JOKER_NO_POOL_FLAG[key]):
+                    add = False
+            if add and key in JOKER_YES_POOL_FLAG:
+                if not config.pool_flags.get(JOKER_YES_POOL_FLAG[key]):
+                    add = False
         elif pool_type == "Voucher":
             # item is VoucherDef
             key = item.key
