@@ -773,16 +773,26 @@ def _create_card(
             eternal = True
 
         if area in ("shop_jokers", "pack_cards"):
-            ep_key = "packetper" if area == "pack_cards" else "etperpoll"
-            ep_poll = rng.pseudorandom(f"{ep_key}{ante}")
+            # Immolate: random(inst, {N_Type, N_Ante}, {R_Eternal_Perishable/Pack, ante}, 2)
+            ep_rtype = RType.EternalPerishablePack if area == "pack_cards" else RType.EternalPerishable
+            ep_key = build_node_key(
+                (NType.Type, ep_rtype),
+                (NType.Ante, ante)
+            )
+            ep_poll = rng.pseudorandom(ep_key)
             if config.enable_eternals_in_shop and ep_poll > 0.7:
                 eternal = True
             elif config.enable_perishables_in_shop and 0.4 < ep_poll <= 0.7:
                 perishable = True
 
-            rental_key = "packssjr" if area == "pack_cards" else "ssjr"
+            # Immolate: random(inst, {N_Type, N_Ante}, {R_Rental/Pack, ante}, 2)
+            rental_rtype = RType.RentalPack if area == "pack_cards" else RType.Rental
+            rental_key = build_node_key(
+                (NType.Type, rental_rtype),
+                (NType.Ante, ante)
+            )
             if config.enable_rentals_in_shop:
-                if rng.pseudorandom(f"{rental_key}{ante}") > 0.7:
+                if rng.pseudorandom(rental_key) > 0.7:
                     rental = True
 
         # Joker edition: use node-based RNG
