@@ -39,21 +39,27 @@ RUN mkdir -p /opt/balatro-game \
              /root/.local/share/love-11/Mods
 
 # Copy AI mod (TCP 12345 interface)
-COPY ai-mod.lua /opt/balatro-ai/ai-mod.lua
+COPY game/ai-mod.lua /opt/balatro-ai/ai-mod.lua
 
 # Copy lovely patch for AI mod injection (love-11 is the actual dir lovely uses)
-COPY mods/ai-mod /root/.local/share/love/Mods/ai-mod
-COPY mods/ai-mod /root/.local/share/love-11/Mods/ai-mod
+RUN mkdir -p /root/.local/share/love/Mods/ai-mod /root/.local/share/love-11/Mods/ai-mod
+COPY game/ai-mod.lua /root/.local/share/love/Mods/ai-mod/ai-mod.lua
+COPY game/ai-mod.lua /root/.local/share/love-11/Mods/ai-mod/ai-mod.lua
 
 # Copy AI agent
-COPY ai-agent.py /opt/balatro-ai/ai-agent.py
+COPY agent/ai-agent.py /opt/balatro-ai/ai-agent.py
+COPY agent/game_logger.py /opt/balatro-ai/game_logger.py
+COPY agent/run_db.py /opt/balatro-ai/run_db.py
 RUN chmod +x /opt/balatro-ai/ai-agent.py
+
+# Copy decision engine
+COPY decision/ /opt/balatro-ai/decision/
 
 # Screenshot directory
 RUN mkdir -p /opt/balatro-screenshots
 
 # Copy startup script
-COPY start-game.sh /opt/start-game.sh
+COPY docker/start-game.sh /opt/start-game.sh
 RUN chmod +x /opt/start-game.sh
 
 # Xvfb display
