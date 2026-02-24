@@ -633,6 +633,38 @@ def poll_edition(
 # create_card — precise port of create_card() for shop context
 # ---------------------------------------------------------------------------
 
+def _select_joker_rarity(rng, ante: int, source) -> int:
+    """Select Joker rarity using Immolate's next_joker_rarity logic.
+    
+    Immolate: random(inst, {N_Type, N_Ante, N_Source}, {R_Joker_Rarity, ante, itemSource}, 2)
+    Key = "rarity" + str(ante) + source_str
+    
+    Returns:
+        1 = Common, 2 = Uncommon, 3 = Rare, 4 = Legendary
+    """
+    from .rng import RType, NType, build_node_key
+    
+    # Build node key: {N_Type, N_Ante, N_Source}
+    # Note: N_Ante comes BEFORE N_Source!
+    rarity_key = build_node_key(
+        (NType.Type, RType.JokerRarity),
+        (NType.Ante, ante),
+        (NType.Source, source),
+    )
+    
+    rate = rng.raw_random(rarity_key)
+    
+    # Thresholds from Immolate functions.cl:184-240
+    if rate > 0.95:
+        return 4  # Legendary
+    elif rate > 0.7:
+        return 3  # Rare
+    elif ante >= 2 and rate > 0:
+        return 2  # Uncommon
+    else:
+        return 1  # Common
+
+
 def _create_card(
     rng: RNGState,
     card_type: str,
@@ -675,21 +707,35 @@ def _create_card(
     # Build pool and select using node-based RNG
     from .rng import RType, RSource
     
-    pool, pool_key = _build_pool(card_type, None, config, ante, key_append, legendary)
-    
-    # Map card_type to RType
-    rtype_map = {
-        "Joker": RType.Joker1,
-        "Tarot": RType.Tarot,
-        "Planet": RType.Planet,
-        "Spectral": RType.Spectral,
-    }
-    rtype = rtype_map.get(card_type, RType.Joker1)
-    
     # Determine source from area
     source = RSource.Shop if "shop" in area else RSource.Buffoon
     
-    center_key = rng.node_element(rtype, pool, source, ante, resample=0)
+    # Joker-specific: rarity分流
+    if card_type == "Joker":
+        # Step 1: Select rarity using {N_Type, N_Ante, N_Source}
+        joker_rarity = _select_joker_rarity(rng, ante, source)
+        
+        # Step 2: Get pool for this rarity
+        pool = [j[0] for j in JOKERS_BY_RARITY.get(joker_rarity, [])]
+        
+        # Step 3: Select from rarity-specific pool using {N_Type, N_Source, N_Ante}
+        # Note: N_Source comes BEFORE N_Ante in randchoice_common!
+        rtype_map = {1: RType.Joker1, 2: RType.Joker2, 3: RType.Joker3, 4: RType.Joker4}
+        rtype = rtype_map[joker_rarity]
+        
+        center_key = rng.node_element(rtype, pool, source, ante, resample=0)
+    else:
+        # Non-Joker: use original logic
+        pool, pool_key = _build_pool(card_type, None, config, ante, key_append, legendary)
+        
+        rtype_map = {
+            "Tarot": RType.Tarot,
+            "Planet": RType.Planet,
+            "Spectral": RType.Spectral,
+        }
+        rtype = rtype_map.get(card_type, RType.Tarot)
+        
+        center_key = rng.node_element(rtype, pool, source, ante, resample=0)
 
     # Resample if UNAVAILABLE
     resample_num = 1
