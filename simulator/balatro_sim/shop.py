@@ -752,7 +752,7 @@ def create_card_for_shop(
 
     Uses rate-based polling to determine card type, then calls _create_card.
     """
-    from .rng import RType, RSource
+    from .rng import RType, RSource, NType, build_node_key
     
     total_rate = (
         config.joker_rate
@@ -762,8 +762,13 @@ def create_card_for_shop(
         + config.spectral_rate
     )
 
-    # Use node-based RNG: CardType + Shop + ante
-    polled_rate = rng.node_random(RType.CardType, RSource.Shop, ante) * total_rate
+    # Immolate: random(inst, {N_Type, N_Ante}, {R_Card_Type, ante}, 2)
+    # Key = "cdt" + str(ante)  (NO source!)
+    card_type_key = build_node_key(
+        (NType.Type, RType.CardType),
+        (NType.Ante, ante),
+    )
+    polled_rate = rng.raw_random(card_type_key) * total_rate
 
     # Rate buckets — order matters (matches Lua ipairs order)
     rate_buckets = [
@@ -874,7 +879,7 @@ def get_pack(
 
     Uses weighted selection over PACK_DEFS, matching Lua's iteration order.
     """
-    from .rng import RType, RSource
+    from .rng import RType, NType, build_node_key
     
     # Ante 1-2: first pack is forced Buffoon Pack (Immolate behavior)
     if ante <= 2 and not config.first_shop_buffoon and "p_buffoon_normal_1" not in config.banned_keys:
@@ -889,8 +894,9 @@ def get_pack(
         if (not pack_type or pack_type == p.kind) and p.key not in config.banned_keys:
             cume += p.weight
 
-    # Use ShopPack RType + Shop source + ante
-    poll = rng.node_random(RType.ShopPack, RSource.Shop, ante) * cume
+    # Use ShopPack RType + ante (no source, matching Immolate)
+    node_key = build_node_key((NType.Type, RType.ShopPack), (NType.Ante, ante))
+    poll = rng.raw_random(node_key) * cume
     it = 0.0
     for p in PACK_DEFS:
         if p.key in config.banned_keys:
