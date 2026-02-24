@@ -103,7 +103,7 @@ _JOKER_RAW: list[tuple[str, str, int, int, int]] = [
     ("j_madness", "Madness", 2, 7, 64),
     ("j_square", "Square Joker", 1, 4, 65),
     ("j_seance", "Séance", 2, 6, 66),
-    ("j_riff_raff", "Riff-Raff", 1, 5, 67),
+    ("j_riff_raff", "Riff-raff", 1, 5, 67),
     ("j_vampire", "Vampire", 2, 7, 68),
     ("j_shortcut", "Shortcut", 2, 7, 69),
     ("j_hologram", "Hologram", 2, 7, 70),
@@ -193,6 +193,27 @@ _JOKER_RAW: list[tuple[str, str, int, int, int]] = [
 JOKER_BY_KEY: dict[str, tuple[str, str, int, int, int]] = {
     j[0]: j for j in _JOKER_RAW
 }
+
+# Jokers locked by default in Balatro 1.0.1o (unlocked = false in game.lua).
+# These are excluded from the shop pool unless the player has unlocked them.
+LOCKED_JOKERS_DEFAULT: set[str] = {
+    # Common (4)
+    "j_ticket", "j_swashbuckler", "j_hanging_chad", "j_shoot_the_moon",
+    # Uncommon (23)
+    "j_mr_bones", "j_acrobat", "j_sock_and_buskin", "j_troubadour",
+    "j_certificate", "j_smeared", "j_throwback", "j_rough_gem",
+    "j_bloodstone", "j_arrowhead", "j_onyx_agate", "j_glass",
+    "j_ring_master", "j_flower_pot", "j_merry_andy", "j_oops",
+    "j_idol", "j_seeing_double", "j_matador", "j_satellite",
+    "j_cartomancer", "j_astronomer", "j_bootstraps",
+    # Rare (13)
+    "j_blueprint", "j_wee", "j_hit_the_road", "j_duo", "j_trio",
+    "j_family", "j_order", "j_tribe", "j_stuntman", "j_invisible",
+    "j_brainstorm", "j_drivers_license", "j_burnt",
+    # Legendary (5) — excluded from random rarity anyway, but listed for completeness
+    "j_caino", "j_triboulet", "j_yorick", "j_chicot", "j_perkeo",
+}
+
 JOKERS_BY_RARITY: dict[int, list[tuple[str, str, int, int, int]]] = {}
 for _j in _JOKER_RAW:
     JOKERS_BY_RARITY.setdefault(_j[2], []).append(_j)
@@ -245,6 +266,10 @@ PLANET_CARDS: list[tuple[str, str, int, int]] = [
     ("c_planet_x", "Planet X", 3, 11),
     ("c_eris", "Eris", 3, 12),
 ]
+
+# Softlocked planets — only available if the corresponding hand type has been played.
+# In practice, Five of a Kind / Flush House / Flush Five are rarely played in early antes.
+SOFTLOCKED_PLANETS: set[str] = {"c_ceres", "c_planet_x", "c_eris"}
 
 SPECTRAL_CARDS: list[tuple[str, str, int, int]] = [
     ("c_familiar", "Familiar", 4, 1),
@@ -474,6 +499,11 @@ class ShopConfig:
     has_showman: bool = False
     # Pool flags
     pool_flags: dict = field(default_factory=dict)
+    # Locked jokers — excluded from pool. Default = LOCKED_JOKERS_DEFAULT.
+    locked_jokers: set = field(default_factory=lambda: set(LOCKED_JOKERS_DEFAULT))
+    # Played hand types — planets with softlock only appear if hand was played.
+    # Default empty = softlocked planets excluded.
+    played_hands: set = field(default_factory=set)
 
 
 # ---------------------------------------------------------------------------
@@ -522,8 +552,11 @@ def _build_pool(
         if pool_type == "Joker":
             # item is (key, name, rarity, cost, order)
             key = item[0]
+            # Locked jokers excluded (unlocked ~= false), except Legendary (rarity 4)
+            if key in config.locked_jokers and item[2] != RARITY_LEGENDARY:
+                pass  # locked, don't add
             # Check used_jokers (no duplicates unless Showman)
-            if config.used_jokers.get(key) and not config.has_showman:
+            elif config.used_jokers.get(key) and not config.has_showman:
                 pass  # don't add
             else:
                 add = True
@@ -534,9 +567,9 @@ def _build_pool(
             # item is VoucherDef
             key = item.key
             if config.used_vouchers.get(key):
-                pass  # already redeemed
+                pass  # already redeemed → UNAVAILABLE
             else:
-                # Check requires
+                # Check requires (locked tier 2 → UNAVAILABLE, not excluded)
                 include = True
                 if item.requires:
                     if not config.used_vouchers.get(item.requires):
@@ -548,6 +581,9 @@ def _build_pool(
             key = item[0]
             # Soul and Black Hole excluded from normal pool
             if key in ("c_soul", "c_black_hole"):
+                add = False
+            # Softlocked planets: only if hand type has been played
+            elif key in SOFTLOCKED_PLANETS and key not in config.played_hands:
                 add = False
             elif config.used_jokers.get(key) and not config.has_showman:
                 pass
@@ -732,8 +768,8 @@ def _create_card(
         # Step 1: Select rarity using {N_Type, N_Ante, N_Source}
         joker_rarity = _select_joker_rarity(rng, ante, source)
         
-        # Step 2: Get pool for this rarity
-        pool = [j[0] for j in JOKERS_BY_RARITY.get(joker_rarity, [])]
+        # Step 2: Get pool for this rarity (use _build_pool for proper filtering)
+        pool, _pool_key = _build_pool("Joker", joker_rarity, config, ante, key_append)
         
         # Step 3: Select from rarity-specific pool using {N_Type, N_Source, N_Ante}
         # Note: N_Source comes BEFORE N_Ante in randchoice_common!
