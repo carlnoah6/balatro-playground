@@ -308,21 +308,16 @@ def lua_randomseed(d: float) -> LuaRandom:
 # ---------------------------------------------------------------------------
 
 def pseudohash(s: str) -> float:
-    """Convert a string to a float in [0, 1). Matches Immolate's pseudohash()."""
+    """Convert a string to a float in [0, 1).
+
+    Direct port of Lua:
+        num = ((1.1239285023/num)*string.byte(str, i)*math.pi + math.pi*i)%1
+    Python float64 matches LuaJIT double precision exactly.
+    """
     num = 1.0
-    k = 32
-    scale = 1 << k
-
-    for i in range(len(s) - 1, -1, -1):
-        byte_val = ord(s[i])
-        pos = i + 1
-        raw = 1.1239285023 / num * byte_val * math.pi + math.pi * pos
-        int_part = int(raw * scale)
-        fract_a = math.modf((1.1239285023 / num * byte_val * math.pi) * scale)[0]
-        fract_b = math.modf((math.pi * pos) * scale)[0]
-        fract_part = math.modf(fract_a + fract_b)[0]
-        num = math.modf((int_part + fract_part) / scale)[0]
-
+    for i in range(len(s), 0, -1):  # Lua: for i=#str, 1, -1
+        byte_val = ord(s[i - 1])    # Lua: string.byte(str, i) — 1-indexed
+        num = ((1.1239285023 / num) * byte_val * math.pi + math.pi * i) % 1
     return num
 
 
