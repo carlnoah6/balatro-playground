@@ -1037,7 +1037,7 @@ def get_pack(
     from .rng import RType, NType, build_node_key
     
     # Ante 1-2: first pack is forced Buffoon Pack (Immolate behavior)
-    if ante <= 2 and not config.first_shop_buffoon and "p_buffoon_normal_1" not in config.banned_keys:
+    if not config.first_shop_buffoon and "p_buffoon_normal_1" not in config.banned_keys:
         config.first_shop_buffoon = True
         for p in PACK_DEFS:
             if p.key == "p_buffoon_normal_1":
